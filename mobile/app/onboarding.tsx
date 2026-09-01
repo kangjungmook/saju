@@ -7,8 +7,7 @@ import { fonts, space } from '../src/theme/tokens';
 import { Button } from '../src/components/Button';
 import { SelectField } from '../src/components/SelectField';
 import { useAuth } from '../src/state/AuthContext';
-import { useChart } from '../src/state/ChartContext';
-import { HANZHI, ZHI } from '../src/lib/bazi/ganzhi';
+import { HANZHI, ZHI, hourBranchIndex } from '../src/lib/bazi/ganzhi';
 import { KR_REGIONS, trueSolarAdjustmentMin } from '../src/lib/bazi/region';
 
 const HOUR_SLOTS = [
@@ -30,14 +29,21 @@ const YEARS = Array.from({ length: 90 }, (_, i) => String(2016 - i));
 const MONTHS = Array.from({ length: 12 }, (_, i) => String(i + 1));
 const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1));
 
-function zhiStartHour(z: number) {
-  return ((2 * z - 1) + 24) % 24;
+/**
+ * The user only picks a 2-hour 시(時) slot, not an exact minute, so the
+ * midpoint is the representative clock time we hand to the engine — it's
+ * the choice least likely to cross into the neighbouring 시 once true solar
+ * time (±90min across Korea) shifts it, unlike the slot's start edge.
+ */
+function zhiMidClock(z: number): { hour: number; minute: number } {
+  const startMin = (((2 * z - 1) + 24) % 24) * 60;
+  const midMin = (startMin + 60) % 1440;
+  return { hour: Math.floor(midMin / 60), minute: midMin % 60 };
 }
 
 export default function OnboardingScreen() {
   const { colors } = useTheme();
   const { provider } = useAuth();
-  const { createChart } = useChart();
 
   const [year, setYear] = useState('1997');
   const [month, setMonth] = useState('3');
@@ -48,12 +54,20 @@ export default function OnboardingScreen() {
   const [hasHour, setHasHour] = useState(true);
   const [region, setRegion] = useState('서울');
   const [gender, setGender] = useState<'female' | 'male'>('female');
-  const [submitting, setSubmitting] = useState(false);
 
   const trueSolarAdj = trueSolarAdjustmentMin(KR_REGIONS[region]);
 
-  const previewZhi = hasHour ? ZHI[zhiIndex] : null;
-  const previewHan = hasHour ? HANZHI[zhiIndex] : null;
+  // Mirrors what computeChart will actually do (§3 step 1: correct to true solar
+  // time *before* placing the hour branch), so this preview can't promise one
+  // 시 and the real calculation land on the neighbour.
+  const previewZhiIndex = useMemo(() => {
+    if (!hasHour) return null;
+    const { hour, minute } = zhiMidClock(zhiIndex);
+    const correctedMin = ((hour * 60 + minute + trueSolarAdj) % 1440 + 1440) % 1440;
+    return hourBranchIndex(Math.floor(correctedMin / 60), correctedMin % 60);
+  }, [hasHour, zhiIndex, trueSolarAdj]);
+  const previewZhi = previewZhiIndex !== null ? ZHI[previewZhiIndex] : null;
+  const previewHan = previewZhiIndex !== null ? HANZHI[previewZhiIndex] : null;
 
   const connectedLine = useMemo(() => {
     if (provider === 'kakao') return '카카오 계정으로 시작했어요';
@@ -62,16 +76,14 @@ export default function OnboardingScreen() {
     return '둘러보는 중이에요 — 나중에 저장하려면 로그인해주세요';
   }, [provider]);
 
-  const submit = async () => {
-    setSubmitting(true);
-    try {
-      const date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-      const time = hasHour ? `${String(zhiStartHour(zhiIndex)).padStart(2, '0')}:00` : null;
-      await createChart({ date, time, calendar, isLeapMonth, region, gender });
-      router.replace('/home');
-    } finally {
-      setSubmitting(false);
-    }
+  const submit = () => {
+    const date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    const mid = hasHour ? zhiMidClock(zhiIndex) : null;
+    const time = mid ? `${String(mid.hour).padStart(2, '0')}:${String(mid.minute).padStart(2, '0')}` : null;
+    router.push({
+      pathname: '/loading',
+      params: { date, time: time ?? '', calendar, isLeapMonth: String(isLeapMonth), region, gender },
+    });
   };
 
   return (
@@ -206,7 +218,7 @@ export default function OnboardingScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { borderTopColor: colors.line }]}>
-        <Button label="내 사주 캘린더 만들기" onPress={submit} loading={submitting} />
+        <Button label="내 사주 캘린더 만들기" onPress={submit} />
         <Text style={[styles.footNote, { color: colors.ink3 }]}>생년월일시는 나중에 설정에서 고칠 수 있어요</Text>
       </View>
     </SafeAreaView>

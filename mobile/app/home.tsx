@@ -195,7 +195,7 @@ function TabBar({ onNotReady, colors, chart }: { onNotReady: (n: string) => void
       <Pressable accessibilityLabel="궁합" style={styles.tabBtn} onPress={() => onNotReady('궁합')}>
         <Text style={{ fontSize: 18, color: colors.ink3 }}>◎</Text>
       </Pressable>
-      <Pressable accessibilityLabel="내 사주" style={styles.tabBtn} onPress={() => onNotReady('내 사주')}>
+      <Pressable accessibilityLabel="내 사주" style={styles.tabBtn} onPress={() => router.push('/mysaju')}>
         <View style={[styles.tabAvatar, { backgroundColor: colors.score[1] }]}>
           <Text style={{ fontFamily: fonts.serif, fontSize: 13, fontWeight: '600', color: colors.scoreFg[1] }}>{dayMasterHan}</Text>
         </View>

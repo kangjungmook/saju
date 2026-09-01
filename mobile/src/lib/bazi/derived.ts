@@ -1,5 +1,5 @@
 import { Chart, DayScore, Element, GanZhi, TenGodName } from '../../types/domain';
-import { GAN_ELEMENT, ZHI_ELEMENT, ganIndexOf, relateElements, yearPillar, zhiIndexOf } from './ganzhi';
+import { GAN_ELEMENT, HANGAN, ZHI_ELEMENT, ganIndexOf, relateElements, yearPillar, zhiIndexOf } from './ganzhi';
 import { kstToAbsoluteJDE } from './time';
 
 const RELATION_WEIGHT: Record<ReturnType<typeof relateElements>, number> = {
@@ -122,4 +122,77 @@ const REMEDY: [string, string][] = [
 export function remedyForBand(band: 1 | 2 | 3 | 4 | 5): { caution: string; ritual: string } {
   const [caution, ritual] = REMEDY[band - 1];
   return { caution, ritual };
+}
+
+// --- Screen 05 (내 사주 · 원국 풀이) ------------------------------------
+
+export const ELEMENT_INFO: Record<Element, { reading: string; noun: string; nounParticle: string; readingParticle: '이' | '가' }> = {
+  木: { reading: '목', noun: '나무', nounParticle: '를', readingParticle: '이' },
+  火: { reading: '화', noun: '불', nounParticle: '을', readingParticle: '가' },
+  土: { reading: '토', noun: '흙', nounParticle: '을', readingParticle: '가' },
+  金: { reading: '금', noun: '쇠', nounParticle: '를', readingParticle: '이' },
+  水: { reading: '수', noun: '물', nounParticle: '을', readingParticle: '가' },
+};
+
+/** "나무를 닮은 사주 / 갑목(甲木) 일간" — built from the real day master, not a fixture. */
+export function dayMasterHeadline(chart: Chart): { line1: string; line2: string } {
+  const dmIdx = ganIndexOf(chart.dayMaster);
+  const el = GAN_ELEMENT[dmIdx];
+  const info = ELEMENT_INFO[el];
+  return {
+    line1: `${info.noun}${info.nounParticle} 닮은 사주`,
+    line2: `${chart.dayMaster}${info.reading}(${HANGAN[dmIdx]}${el}) 일간`,
+  };
+}
+
+/** One line naming the chart's most- and least-represented elements. */
+export function elementDistributionSummary(elements: Record<Element, number>): string {
+  const entries = Object.entries(elements) as [Element, number][];
+  const [highEl] = entries.reduce((a, b) => (b[1] > a[1] ? b : a));
+  const [lowEl] = entries.reduce((a, b) => (b[1] < a[1] ? b : a));
+  const high = ELEMENT_INFO[highEl];
+  const low = ELEMENT_INFO[lowEl];
+  return `${high.reading}(${highEl})${high.readingParticle} 도드라지고 ${low.reading}(${lowEl})${low.readingParticle} 옅은 구성이에요.`;
+}
+
+const STRENGTH_LABELS = ['신약', '약간 신약', '중화', '약간 신강', '신강'] as const;
+
+/**
+ * 일간 강약 — how supported vs. drained the day master is by the chart's other
+ * seven characters. Each of the other stems/branches either reinforces (같은
+ * 오행 or 일간을 생하는 오행) or drains (일간이 생/극하거나, 일간을 극하는 오행);
+ * the balance maps to 0–100 with 50 = 중화.
+ */
+export function dayMasterStrength(chart: Chart): { percent: number; label: (typeof STRENGTH_LABELS)[number] } {
+  const dmEl = GAN_ELEMENT[ganIndexOf(chart.dayMaster)];
+  const others: GanZhi[] = [chart.pillars.year, chart.pillars.month, chart.pillars.hour].filter(
+    (p): p is GanZhi => p !== null,
+  );
+  const branchElements = [chart.pillars.year, chart.pillars.month, chart.pillars.day, chart.pillars.hour]
+    .filter((p): p is GanZhi => p !== null)
+    .map((p) => ZHI_ELEMENT[zhiIndexOf(p.zhi)]);
+
+  let score = 0;
+  let count = 0;
+  const tally = (el: Element) => {
+    const rel = relateElements(el, dmEl);
+    score += rel === 'same' || rel === 'producedBy' ? 1 : -1;
+    count += 1;
+  };
+  others.forEach((p) => tally(p.element));
+  branchElements.forEach(tally);
+
+  const percent = Math.round(50 + (score / Math.max(1, count)) * 50);
+  const clamped = Math.max(2, Math.min(98, percent));
+  const idx = clamped < 30 ? 0 : clamped < 45 ? 1 : clamped <= 55 ? 2 : clamped <= 70 ? 3 : 4;
+  return { percent: clamped, label: STRENGTH_LABELS[idx] };
+}
+
+const CALENDAR_LABEL = { solar: '양력', lunar: '음력' } as const;
+
+/** "1997년 3월 21일 묘시생 · 양력" */
+export function birthCaption(chart: Chart): string {
+  const [y, m, d] = chart.birth.date.split('-').map(Number);
+  const hourPart = chart.hasHour && chart.pillars.hour ? `${chart.pillars.hour.zhi}시생 · ` : '시간 미상 · ';
+  return `${y}년 ${m}월 ${d}일 ${hourPart}${CALENDAR_LABEL[chart.birth.calendar]}`;
 }

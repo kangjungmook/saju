@@ -68,11 +68,15 @@ export function monthPillar(jdeUT: number, solarYear: number, yearGanIdx: number
 // 五鼠遁 — hour-子 stem for each day stem, then +1 per subsequent branch.
 const ZI_HOUR_GAN_START = [0, 2, 4, 6, 8]; // (dayGanIdx % 5): 甲己->甲(0) 乙庚->丙(2) 丙辛->戊(4) 丁壬->庚(6) 戊癸->壬(8)
 
-/** 시주 — hour pillar. Branch from the 12 double-hours (子 = 23:00–01:00), stem via 五鼠遁. */
-export function hourPillar(hour: number, minute: number, dayGanIdx: number): GanZhi {
+/** 子(23:00-01:00)=0, 丑(01-03)=1, ... 亥(21-23)=11 — the double-hour a clock time falls in. */
+export function hourBranchIndex(hour: number, minute: number): number {
   const totalMin = hour * 60 + minute;
-  // 子(23:00-01:00)=0, 丑(01-03)=1, ... 亥(21-23)=11
-  const zhiIdx = Math.floor((((totalMin + 60) % 1440) / 120)) % 12;
+  return Math.floor((((totalMin + 60) % 1440) / 120)) % 12;
+}
+
+/** 시주 — hour pillar. Branch from the 12 double-hours, stem via 五鼠遁. */
+export function hourPillar(hour: number, minute: number, dayGanIdx: number): GanZhi {
+  const zhiIdx = hourBranchIndex(hour, minute);
   const ganStart = ZI_HOUR_GAN_START[((dayGanIdx % 10) + 10) % 10 % 5];
   const ganIdx = (ganStart + zhiIdx) % 10;
   return ganZhiOf(ganIdx, zhiIdx);
