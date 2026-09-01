@@ -9,20 +9,10 @@ import { useChart } from '../src/state/ChartContext';
 import { getDayScore, getDayScoresRange } from '../src/state/scores';
 import { DayScore } from '../src/types/domain';
 import { HANGAN, HANZHI, ganIndexOf, zhiIndexOf } from '../src/lib/bazi/ganzhi';
+import { isoOf, todayISO } from '../src/lib/date';
 
 const TITLES = ['숨을 고르는 날', '천천히 가도 되는 날', '잔잔하게 흐르는 날', '흐름이 트이는 날', '크게 열리는 날'];
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
-
-function pad(n: number) {
-  return String(n).padStart(2, '0');
-}
-function isoOf(y: number, m: number, d: number) {
-  return `${y}-${pad(m)}-${pad(d)}`;
-}
-function todayISO() {
-  const t = new Date();
-  return isoOf(t.getFullYear(), t.getMonth() + 1, t.getDate());
-}
 function ganZhiLabel(gz: { gan: string; zhi: string }) {
   const gi = ganIndexOf(gz.gan as any);
   const zi = zhiIndexOf(gz.zhi as any);
@@ -189,7 +179,7 @@ function TabBar({ onNotReady, colors, chart }: { onNotReady: (n: string) => void
       <Pressable accessibilityLabel="문답" style={styles.tabBtn} onPress={() => onNotReady('문답')}>
         <Text style={{ fontSize: 18, color: colors.ink3 }}>?</Text>
       </Pressable>
-      <Pressable accessibilityLabel="하루 기록" style={styles.tabBtn} onPress={() => onNotReady('하루 기록')}>
+      <Pressable accessibilityLabel="하루 기록" style={styles.tabBtn} onPress={() => router.push('/daylog')}>
         <Text style={{ fontSize: 18, color: colors.ink3 }}>✎</Text>
       </Pressable>
       <Pressable accessibilityLabel="궁합" style={styles.tabBtn} onPress={() => onNotReady('궁합')}>

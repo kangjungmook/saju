@@ -14,7 +14,7 @@ interface Props extends Omit<PressableProps, 'style'> {
   fullWidth?: boolean;
 }
 
-export function Button({ label, variant = 'primary', height = 52, icon, loading, fullWidth = true, ...rest }: Props) {
+export function Button({ label, variant = 'primary', height = 52, icon, loading, fullWidth = true, disabled, ...rest }: Props) {
   const { colors } = useTheme();
 
   const bg: Record<Variant, string> = {
@@ -35,6 +35,7 @@ export function Button({ label, variant = 'primary', height = 52, icon, loading,
   return (
     <Pressable
       accessibilityRole="button"
+      disabled={disabled}
       style={({ pressed }) => [
         styles.base,
         {
@@ -43,7 +44,7 @@ export function Button({ label, variant = 'primary', height = 52, icon, loading,
           backgroundColor: bg[variant],
           borderColor: variant === 'outline' ? colors.line : 'transparent',
           borderWidth: variant === 'outline' ? StyleSheet.hairlineWidth * 1.5 : 0,
-          opacity: pressed ? 0.88 : 1,
+          opacity: disabled ? 0.45 : pressed ? 0.88 : 1,
           transform: [{ scale: pressed ? 0.985 : 1 }],
         },
       ]}
