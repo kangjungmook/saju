@@ -10,7 +10,7 @@ import { useChart } from '../src/state/ChartContext';
 import { getDayScore } from '../src/state/scores';
 import { DayScore } from '../src/types/domain';
 import { HANGAN, HANZHI, ganIndexOf, zhiIndexOf } from '../src/lib/bazi/ganzhi';
-import { computeDaeunSeries, computeFacets, computeLuckyItems, computeSeunSeries, remedyForBand } from '../src/lib/bazi/derived';
+import { computeDaeunSeries, computeFacets, computeLuckyItems, computeSeunSeries, currentAge, remedyForBand } from '../src/lib/bazi/derived';
 import { solarToLunarKST } from '../src/lib/bazi/lunar';
 import { areaPath, series, smoothPath } from '../src/lib/curve';
 
@@ -240,11 +240,6 @@ export default function DetailScreen() {
       </ScrollView>
     </SafeAreaView>
   );
-}
-
-function currentAge(birthISO: string): number {
-  const [by] = birthISO.split('-').map(Number);
-  return new Date().getFullYear() - by + 1; // 세는나이, matches the luck-cycle age convention used above
 }
 
 function Section({

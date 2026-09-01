@@ -1,5 +1,5 @@
 import { Chart, DayScore, Element, GanZhi, TenGodName } from '../../types/domain';
-import { GAN_ELEMENT, HANGAN, ZHI_ELEMENT, ganIndexOf, relateElements, yearPillar, zhiIndexOf } from './ganzhi';
+import { GAN_ELEMENT, HANGAN, HANZHI, ZHI_ELEMENT, ganIndexOf, monthPillar, relateElements, yearPillar, zhiIndexOf } from './ganzhi';
 import { kstToAbsoluteJDE } from './time';
 
 const RELATION_WEIGHT: Record<ReturnType<typeof relateElements>, number> = {
@@ -195,4 +195,37 @@ export function birthCaption(chart: Chart): string {
   const [y, m, d] = chart.birth.date.split('-').map(Number);
   const hourPart = chart.hasHour && chart.pillars.hour ? `${chart.pillars.hour.zhi}시생 · ` : '시간 미상 · ';
   return `${y}년 ${m}월 ${d}일 ${hourPart}${CALENDAR_LABEL[chart.birth.calendar]}`;
+}
+
+/**
+ * 23 연간 뷰's month tiles. Scored from the calendar month's actual 절기-based
+ * 월주 (month pillar) relative to the day master — the same mechanism 세운/대운
+ * use — rather than averaging each day's score: a day-score average over any
+ * ~30-day window washes out almost all variation, since the day-stem (10-day)
+ * and day-branch (12-day) cycles both spread evenly across a month regardless
+ * of which month it is. The month pillar is what actually differs month to
+ * month, so scoring it directly is what shows a real "이 달이 낫다" signal.
+ */
+export function calendarMonthPillar(year: number, month: number): GanZhi {
+  const sample = { year, month, day: 15, hour: 12, minute: 0 }; // mid-month, away from 절기 boundaries
+  const jde = kstToAbsoluteJDE(sample);
+  const { pillar: yearP, solarYear } = yearPillar(sample, jde);
+  return monthPillar(jde, solarYear, ganIndexOf(yearP.gan));
+}
+
+export function monthScore(chart: Chart, year: number, month: number): number {
+  const pillar = calendarMonthPillar(year, month);
+  return scoreForPillar(chart, pillar, `${chart.id}:month:${year}-${month}`);
+}
+
+export function currentAge(birthISO: string): number {
+  const [by] = birthISO.split('-').map(Number);
+  return new Date().getFullYear() - by + 1; // 세는나이, matches the luck-cycle age convention
+}
+
+/** The 입춘-anchored year pillar for `year`, e.g. "丙午" — used by 23 연간 뷰's header. */
+export function yearGanZhiHanja(year: number): string {
+  const sample = { year, month: 7, day: 1, hour: 0, minute: 0 };
+  const { pillar } = yearPillar(sample, kstToAbsoluteJDE(sample));
+  return `${HANGAN[ganIndexOf(pillar.gan)]}${HANZHI[zhiIndexOf(pillar.zhi)]}`;
 }

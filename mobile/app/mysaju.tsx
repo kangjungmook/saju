@@ -138,6 +138,8 @@ export default function MySajuScreen() {
           </View>
         )}
 
+        <Button label="올해 흐름 한눈에 보기" variant="outline" onPress={() => router.push('/yearview')} />
+        <View style={{ height: space.sm }} />
         <Button
           label="생년월일시 다시 입력하기"
           variant="outline"
