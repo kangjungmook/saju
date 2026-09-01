@@ -96,9 +96,8 @@ export default function SettingsScreen() {
 
         <SectionLabel colors={colors} text="안내" />
         <View>
-          <Row colors={colors} label="약관 및 개인정보처리방침" onPress={() => notReady('약관 및 개인정보처리방침')} />
-          <Row colors={colors} label="문의하기" onPress={() => notReady('문의하기')} />
-          <Row colors={colors} label="앱 버전" value="0.1.0" last noChevron />
+          <Row colors={colors} label="알림함" onPress={() => router.push('/notifications')} />
+          <Row colors={colors} label="앱 정보" value="0.1.0" onPress={() => router.push('/appinfo')} last />
         </View>
 
         <View style={{ height: space.xxl - space.xs }} />
