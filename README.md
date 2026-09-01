@@ -9,11 +9,13 @@ Implementation of the `사주 캘린더 앱.dc.html` design handoff. Built so fa
 - **관계**: 19 관계 목록·추가, 11 궁합
 - **관리**: 09 설정 (+ 09-2 회원탈퇴), 17 알림함, 28 앱 정보 (+ 계산 기준
   서브페이지)
+- **가족**: 07 가족 그룹 홈(7-1) · 초대 코드 만들기(7-2) · 코드로 참여(7-3)
+  · 구성원 상세
 
 The floating tab bar's 문답 icon is still a stub (needs an LLM integration
-decision — see below). Not built yet: 가족 그룹(07), 구독/결제(08·21),
-위젯(06), 다크모드 전용 화면(24), 빈/에러/오프라인 상태(22), 문답·궁합
-연동 AI 화면(10·18·26), 지난 일 맞춰보기(25), 체감 보정(27).
+decision — see below). Not built yet: 구독/결제(08·21), 위젯(06), 다크모드
+전용 화면(24), 빈/에러/오프라인 상태(22), 문답·궁합 연동 AI 화면(10·18·26),
+지난 일 맞춰보기(25), 체감 보정(27).
 
 - `mobile/` — React Native (Expo, TypeScript, Expo Router)
 - `backend/` — Java Spring Boot (PostgreSQL, JWT auth)
@@ -98,11 +100,24 @@ Bugs this found and fixed: an 오행 percentage-rounding bug that could sum to
 between the login screen's own "already signed in" redirect and the guest
 sign-in flow's redirect, where whichever fired first could send a guest to
 onboarding instead of the sample-chart home screen it's supposed to skip to
-(now a single effect owns that decision); and local storage calls
+(now a single effect owns that decision); local storage calls
 (`state/storage.ts`) that could hang forever instead of failing fast when the
 underlying store is unavailable — verified via `expo-sqlite`'s web backend,
-which doesn't work in this dev setup and hung rather than erroring. All three
-were real correctness bugs, not test-script issues.
+which doesn't work in this dev setup and hung rather than erroring; **no CORS
+config on the backend at all**, so every browser-based call (not just family
+group — anything from `expo start --web`) was silently failing every run this
+project has had, masked because auth/chart code always falls back to a
+local-only session on a failed call (fixed in `config/CorsConfig.java`); and,
+found while verifying family group with two real signed-in sessions, the
+login screen (`app/index.tsx`) **staying mounted for the app's whole
+lifetime** underneath wherever it had navigated to, so any later legitimate
+change to `chart`/`token` (e.g. `ChartContext` re-resolving once a deferred
+storage write finally settles) refired its navigation effect and yanked the
+user back to `/home` mid-session, wherever they'd since navigated — only
+visible once sign-in was hitting a real backend instead of failing over
+CORS, since the guest→create-chart→sync sequence had to actually interleave
+with a second effect for the race to fire. Fixed with a "navigate once" ref
+guard. All real correctness bugs, not test-script issues.
 
 ## Known gaps, called out on purpose
 
@@ -144,8 +159,18 @@ were real correctness bugs, not test-script issues.
   slow for any other reason). Cross-*restart* persistence on web specifically
   is still not verified reliable — worth a second look if web is ever a
   real target, not just a dev convenience.
-- **One chart per user** on the backend — family/multi-profile sync (screen
-  07) isn't modeled yet.
+- **One chart per user** on the backend. Family groups (07) are a thin
+  layer on top: `FamilyGroup`/`FamilyMember`/`FamilyInvite` (6-digit codes,
+  24h TTL) let up to 5 signed-in users see each other's day score — computed
+  client-side from each member's synced `Chart`, same as everywhere else, so
+  no score is ever computed or stored server-side. Only reachable from a
+  real (non-guest-local) session: Kakao/Apple aren't wired to native SDKs
+  yet, so today that means "먼저 둘러보기" (guest — the backend does issue
+  guest sessions a real JWT). CORS is enabled on the backend
+  (`config/CorsConfig.java`, defaults to `localhost:*`) purely so the Expo
+  **web** preview can call it in dev — native iOS/Android requests were
+  never subject to CORS, so this had no effect there; override
+  `app.cors.allowed-origins` once a real web origin exists.
 - 세운/대운/행운 아이템 all derive from the real chart (no fixture data), but
   the four "항목별" facet sub-scores are a light heuristic layer on top of
   the real score, not an independently modeled calculation — noted in

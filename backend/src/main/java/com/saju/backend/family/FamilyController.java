@@ -2,6 +2,7 @@ package com.saju.backend.family;
 
 import com.saju.backend.chart.ChartRepository;
 import com.saju.backend.chart.ChartRecord;
+import com.saju.backend.family.dto.InvitePreviewResponse;
 import com.saju.backend.family.dto.InviteResponse;
 import com.saju.backend.family.dto.JoinRequest;
 import com.saju.backend.family.dto.MemberResponse;
@@ -64,6 +65,22 @@ public class FamilyController {
     Instant expiresAt = Instant.now().plus(INVITE_TTL);
     inviteRepository.save(new FamilyInvite(groupId, code, expiresAt));
     return new InviteResponse(code, expiresAt);
+  }
+
+  /** Lets 7-3 show whose group a code belongs to before the user commits to joining it. */
+  @GetMapping("/invites/{code}")
+  public InvitePreviewResponse previewInvite(@PathVariable String code) {
+    FamilyInvite invite = inviteRepository.findByCode(code)
+        .filter(FamilyInvite::isValid)
+        .orElseThrow(() -> new IllegalArgumentException("코드가 유효하지 않거나 만료됐어요."));
+    FamilyGroup group = groupRepository.findById(invite.getGroupId())
+        .orElseThrow(() -> new IllegalStateException("그룹을 찾을 수 없어요."));
+    String ownerName = userRepository.findById(group.getCreatedByUserId())
+        .map(User::getNickname)
+        .filter(n -> n != null && !n.isBlank())
+        .orElse("가족");
+    int memberCount = memberRepository.findByGroupId(group.getId()).size();
+    return new InvitePreviewResponse(ownerName, memberCount);
   }
 
   @PostMapping("/join")

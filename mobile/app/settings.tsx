@@ -72,6 +72,7 @@ export default function SettingsScreen() {
             onPress={() => notReady('계정 정보')}
           />
           <Row colors={colors} label="내 정보 수정" value={birthLabel} onPress={() => router.push('/onboarding')} />
+          <Row colors={colors} label="가족 그룹" onPress={() => router.push('/family')} />
           <Row colors={colors} label="구독 관리" value="무료 이용 중" onPress={() => notReady('구독 관리')} last />
         </View>
 

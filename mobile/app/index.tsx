@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -27,14 +27,26 @@ export default function LoginScreen() {
   // through this same effect, so there's exactly one navigation decision, not two
   // racing ones. Guest browsing seeds a sample chart here (handoff §4 note, 01·02)
   // so 03/04 open immediately without a data-entry detour.
+  //
+  // This screen stays mounted underneath whatever it navigates to (the stack
+  // navigator doesn't unmount it), so `chart`/`token` can legitimately change
+  // again later on their own (e.g. ChartContext re-resolving once a deferred
+  // local-storage write settles) — without this guard that would refire the
+  // effect and yank the user back to /home mid-session, wherever they'd since
+  // navigated to. Once this screen has made its one navigation call, it's done.
+  const navigatedRef = useRef(false);
   useEffect(() => {
+    if (navigatedRef.current) return;
     if (authLoading || chartLoading) return;
     if (!provider) return;
     if (chart) {
+      navigatedRef.current = true;
       router.replace('/home');
     } else if (provider === 'guest') {
+      navigatedRef.current = true;
       createChart(SAMPLE_BIRTH_INPUT, 'guest-sample').then(() => router.replace('/home'));
     } else {
+      navigatedRef.current = true;
       router.replace('/onboarding');
     }
   }, [authLoading, chartLoading, provider, chart, createChart]);

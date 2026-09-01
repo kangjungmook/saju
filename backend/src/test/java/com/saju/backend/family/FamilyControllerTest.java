@@ -61,6 +61,20 @@ class FamilyControllerTest {
   }
 
   @Test
+  void previewingAValidCodeShowsGroupInfoWithoutJoining() throws Exception {
+    String code = createInviteAs("ownerF");
+
+    mockMvc.perform(get("/family/invites/" + code).with(user("curiousG")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.memberCount").value(1));
+
+    // previewing must not have joined curiousG
+    mockMvc.perform(get("/family/members").with(user("curiousG")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(0)));
+  }
+
+  @Test
   void aUserAlreadyInAGroupCannotJoinAnother() throws Exception {
     String firstCode = createInviteAs("ownerC");
     joinAs("memberD", firstCode).andExpect(status().isOk());
