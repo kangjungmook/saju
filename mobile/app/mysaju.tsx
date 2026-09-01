@@ -28,8 +28,13 @@ export default function MySajuScreen() {
 
   return (
     <SafeAreaView style={[styles.fill, { backgroundColor: colors.surface }]} edges={['top']}>
+      <View style={styles.navRow}>
+        <Pressable accessibilityLabel="설정" onPress={() => router.push('/settings')} style={styles.settingsBtn}>
+          <Text style={{ fontSize: 18, color: colors.ink2 }}>⚙</Text>
+        </Pressable>
+      </View>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={{ paddingTop: space.base, paddingBottom: space.lg }}>
+        <View style={{ paddingTop: space.xs, paddingBottom: space.lg }}>
           <Text style={{ fontSize: 12, letterSpacing: 0.5, color: colors.ink3, marginBottom: space.xs }}>{birthCaption(chart)}</Text>
           {headline && (
             <Text style={[styles.headline, { color: colors.ink, fontFamily: fonts.serif }]}>
@@ -146,6 +151,8 @@ export default function MySajuScreen() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  navRow: { height: 52, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: space.base },
+  settingsBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   scroll: { paddingHorizontal: space.lg, paddingBottom: space.xl },
   headline: { fontSize: 28, fontWeight: '600', lineHeight: 36, marginTop: space.xs },
   pillarGrid: { flexDirection: 'row', gap: space.sm },

@@ -1,8 +1,9 @@
 # 사주 캘린더
 
-Implementation of the `사주 캘린더 앱.dc.html` design handoff — core flow only
-(01 로그인 → 02 정보 입력 → 03 홈·월간 캘린더 → 04 상세). The remaining screens
-(가족 그룹, 구독, 설정, 위젯, ...) are designed but not yet built here.
+Implementation of the `사주 캘린더 앱.dc.html` design handoff. Built so far:
+01 로그인 → 02 정보 입력 → 16 계산 대기 → 03 홈·월간 캘린더 → 04 상세, plus
+05 내 사주 원국 풀이 and 09 설정 (+ 09-2 회원탈퇴 확인). The remaining screens
+(가족 그룹, 구독, 위젯, 문답, 궁합, ...) are designed but not yet built here.
 
 - `mobile/` — React Native (Expo, TypeScript, Expo Router)
 - `backend/` — Java Spring Boot (PostgreSQL, JWT auth)
