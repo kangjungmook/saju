@@ -9,37 +9,7 @@ import { SelectField } from '../src/components/SelectField';
 import { useAuth } from '../src/state/AuthContext';
 import { HANZHI, ZHI, hourBranchIndex } from '../src/lib/bazi/ganzhi';
 import { KR_REGIONS, trueSolarAdjustmentMin } from '../src/lib/bazi/region';
-
-const HOUR_SLOTS = [
-  { z: 0, label: '오후 11시 – 오전 1시' },
-  { z: 1, label: '오전 1시 – 3시' },
-  { z: 2, label: '오전 3시 – 5시' },
-  { z: 3, label: '오전 5시 – 7시' },
-  { z: 4, label: '오전 7시 – 9시' },
-  { z: 5, label: '오전 9시 – 11시' },
-  { z: 6, label: '오전 11시 – 오후 1시' },
-  { z: 7, label: '오후 1시 – 3시' },
-  { z: 8, label: '오후 3시 – 5시' },
-  { z: 9, label: '오후 5시 – 7시' },
-  { z: 10, label: '오후 7시 – 9시' },
-  { z: 11, label: '오후 9시 – 11시' },
-];
-
-const YEARS = Array.from({ length: 90 }, (_, i) => String(2016 - i));
-const MONTHS = Array.from({ length: 12 }, (_, i) => String(i + 1));
-const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1));
-
-/**
- * The user only picks a 2-hour 시(時) slot, not an exact minute, so the
- * midpoint is the representative clock time we hand to the engine — it's
- * the choice least likely to cross into the neighbouring 시 once true solar
- * time (±90min across Korea) shifts it, unlike the slot's start edge.
- */
-function zhiMidClock(z: number): { hour: number; minute: number } {
-  const startMin = (((2 * z - 1) + 24) % 24) * 60;
-  const midMin = (startMin + 60) % 1440;
-  return { hour: Math.floor(midMin / 60), minute: midMin % 60 };
-}
+import { DAYS, HOUR_SLOTS, MONTHS, YEARS, zhiMidClock } from '../src/lib/birthFields';
 
 export default function OnboardingScreen() {
   const { colors } = useTheme();

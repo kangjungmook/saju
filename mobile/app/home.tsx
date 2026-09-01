@@ -182,7 +182,7 @@ function TabBar({ onNotReady, colors, chart }: { onNotReady: (n: string) => void
       <Pressable accessibilityLabel="하루 기록" style={styles.tabBtn} onPress={() => router.push('/daylog')}>
         <Text style={{ fontSize: 18, color: colors.ink3 }}>✎</Text>
       </Pressable>
-      <Pressable accessibilityLabel="궁합" style={styles.tabBtn} onPress={() => onNotReady('궁합')}>
+      <Pressable accessibilityLabel="궁합" style={styles.tabBtn} onPress={() => router.push('/relations')}>
         <Text style={{ fontSize: 18, color: colors.ink3 }}>◎</Text>
       </Pressable>
       <Pressable accessibilityLabel="내 사주" style={styles.tabBtn} onPress={() => router.push('/mysaju')}>
