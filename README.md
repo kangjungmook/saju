@@ -2,8 +2,10 @@
 
 Implementation of the `사주 캘린더 앱.dc.html` design handoff. Built so far:
 01 로그인 → 02 정보 입력 → 16 계산 대기 → 03 홈·월간 캘린더 → 04 상세, plus
-05 내 사주 원국 풀이 and 09 설정 (+ 09-2 회원탈퇴 확인). The remaining screens
-(가족 그룹, 구독, 위젯, 문답, 궁합, ...) are designed but not yet built here.
+05 내 사주 원국 풀이, 09 설정 (+ 09-2 회원탈퇴 확인), 12 하루 기록, and
+19 관계 + 11 궁합. The floating tab bar's 문답 icon is still a stub (needs
+an LLM integration decision — see below); 가족 그룹, 구독, 위젯, and the
+rest of round 2/3/4 aren't built yet.
 
 - `mobile/` — React Native (Expo, TypeScript, Expo Router)
 - `backend/` — Java Spring Boot (PostgreSQL, JWT auth)
@@ -118,13 +120,22 @@ were real correctness bugs, not test-script issues.
   handoff's rule ①) but shouldn't be presented as a canonical formula.
 - **Pretendard isn't bundled** (no Google Fonts distribution); UI falls back
   to the platform system sans. Noto Serif KR is loaded for headlines.
-- **`expo-sqlite`'s web backend doesn't load in this dev sandbox** (its web
-  worker bundle 404s) — `state/storage.ts` times out and degrades to
-  "nothing persisted" rather than hanging, so the app still works on web,
-  it just won't remember anything across a page reload there. Native
-  (iOS/Android) uses `expo-sqlite`'s real SQLite backend and isn't affected;
-  this is worth a second look if web is ever a real target, not just a dev
-  convenience.
+- **`expo-sqlite`'s web backend doesn't reliably load in this dev sandbox**
+  (its web worker bundle sometimes fails/is slow to come up) — this
+  originally surfaced as calls hanging forever, then as a real data-loss
+  bug (a write that silently timed out looked like it succeeded to the
+  screen that made it, but a different screen's fresh read saw nothing).
+  `state/storage.ts` now keeps an in-memory layer that's the actual source
+  of truth for the running session — every write commits there immediately
+  and is consistent for any reader in the same session regardless of the
+  underlying store's health, with the timeout-guarded kv-store call behind
+  it as best-effort cross-restart persistence. Native (iOS/Android) uses
+  `expo-sqlite`'s real SQLite backend, which doesn't have this problem, but
+  the in-memory layer is a genuine improvement there too (faster reads, and
+  cheap insurance against the same class of bug should the store ever be
+  slow for any other reason). Cross-*restart* persistence on web specifically
+  is still not verified reliable — worth a second look if web is ever a
+  real target, not just a dev convenience.
 - **One chart per user** on the backend — family/multi-profile sync (screen
   07) isn't modeled yet.
 - 세운/대운/행운 아이템 all derive from the real chart (no fixture data), but
