@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: saju-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/saju}
+    username: ${DB_USER:saju}
+    password: ${DB_PASSWORD:saju}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: ${PORT:8080}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-change-me-dev-only-change-me-32bytes}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:43200} # 30 days
+  kakao:
+    user-info-url: https://kapi.kakao.com/v2/user/me
+  apple:
+    keys-url: https://appleid.apple.com/auth/keys
+    issuer: https://appleid.apple.com
+    audience: ${APPLE_CLIENT_ID:com.saju.app}
