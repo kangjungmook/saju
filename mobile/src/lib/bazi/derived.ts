@@ -1,6 +1,7 @@
 import { Chart, DayScore, Element, GanZhi, TenGodName } from '../../types/domain';
 import { GAN_ELEMENT, HANGAN, HANZHI, ZHI_ELEMENT, ganIndexOf, monthPillar, relateElements, yearPillar, zhiIndexOf } from './ganzhi';
 import { kstToAbsoluteJDE } from './time';
+import { computeDayScore } from './dayScore';
 
 const RELATION_WEIGHT: Record<ReturnType<typeof relateElements>, number> = {
   producedBy: 13,
@@ -228,4 +229,37 @@ export function yearGanZhiHanja(year: number): string {
   const sample = { year, month: 7, day: 1, hour: 0, minute: 0 };
   const { pillar } = yearPillar(sample, kstToAbsoluteJDE(sample));
   return `${HANGAN[ganIndexOf(pillar.gan)]}${HANZHI[zhiIndexOf(pillar.zhi)]}`;
+}
+
+// --- Screen 13 (월간 결산) -----------------------------------------------
+
+export function dailyScoresForMonth(chart: Chart, year: number, month: number): { date: string; score: number }[] {
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return Array.from({ length: daysInMonth }, (_, i) => {
+    const date = `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
+    return { date, score: computeDayScore(chart, date).raw };
+  });
+}
+
+const ELEMENT_MOOD: Record<Element, string> = { 木: '확장', 火: '표현', 土: '다짐', 金: '정리', 水: '흐름' };
+
+export function monthlyElementMood(year: number, month: number): { element: Element; mood: string } {
+  const pillar = calendarMonthPillar(year, month);
+  return { element: pillar.element, mood: ELEMENT_MOOD[pillar.element] };
+}
+
+const HEADLINE_BY_RELATION: Record<ReturnType<typeof relateElements>, { title: string; body: (el: string) => string }> = {
+  producedBy: { title: '채워지는 결로 지났습니다', body: (el) => `${el}이 든든하게 받쳐준 달이라, 무리하지 않아도 힘이 남았어요.` },
+  same: { title: '나답게 밀어붙인 달이었습니다', body: (el) => `${el} 기운이 겹쳐 힘이 넘쳤던 만큼, 잠시 멈추는 연습도 필요했을 거예요.` },
+  produces: { title: '꺼내 쓰는 결로 지났습니다', body: (el) => `${el} 방향으로 에너지를 많이 썼던 달이라, 회복하는 시간이 곁들여지면 좋아요.` },
+  controls: { title: '기회를 다루며 지났습니다', body: (el) => `${el} 쪽 기회가 계속 보였던 달이에요. 손에 쥔 걸 정리해볼 타이밍입니다.` },
+  controlledBy: { title: '버티는 힘을 길렀습니다', body: (el) => `${el}의 압박이 있었던 달이라 속도를 늦출 수밖에 없었어요. 잘 견딘 시기입니다.` },
+};
+
+export function monthlyHeadline(chart: Chart, year: number, month: number): { title: string; body: string } {
+  const pillar = calendarMonthPillar(year, month);
+  const dmEl = GAN_ELEMENT[ganIndexOf(chart.dayMaster)];
+  const rel = relateElements(pillar.element, dmEl);
+  const info = HEADLINE_BY_RELATION[rel];
+  return { title: info.title, body: info.body(`${pillar.element}(${ELEMENT_INFO[pillar.element].reading})`) };
 }
