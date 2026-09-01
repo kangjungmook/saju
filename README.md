@@ -25,7 +25,8 @@ aren't used — our own JWT layer stays as-is):
 ```
 cd backend
 cp .env.example .env   # fill in your Supabase project's values, see comments in the file
-./run-local.sh
+./run-local.sh                                          # macOS/Linux/Git Bash
+powershell -ExecutionPolicy Bypass -File run-local.ps1   # Windows (cmd or PowerShell)
 ```
 
 Use the **Session pooler** connection string from Supabase (Project →
