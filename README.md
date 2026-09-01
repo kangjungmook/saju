@@ -38,6 +38,41 @@ npm run ios   # or android / web
 Without a JWT (Kakao/Apple not wired — see below) the app still runs fully
 offline: charts and scores are computed and cached on-device.
 
+## What's actually been run, not just compiled
+
+Type-checking and a Metro bundle pass both stay silent on real bugs (wrong
+runtime values, deadlocks, race conditions) — they weren't treated as proof
+this works. Two more checks were used, and both caught real bugs that got
+fixed:
+
+- **`mobile/src/lib/bazi/__tests__`** (`npm test`) — the engine against known
+  reference points: the sexagenary day-pillar formula against a documented
+  historical anchor (1900-01-31 = 갑진일), 입춘/동지 landing on the right
+  calendar day across several years, the lunar↔solar converter correctly
+  identifying 2024-02-10 as 갑진년 설날 (a verifiable real date), and
+  determinism/range checks on `computeChart`/`computeDayScore`. This is what
+  caught the 오행 rounding bug below.
+- **A real browser run** (Expo web + the sandbox's headless Chromium) —
+  loaded all four screens and drove the actual golden path (login → guest →
+  home → tap a date → detail) and confirmed the rendered output is real
+  computed content (score, 간지, curves, facets, lucky items), not stalled
+  or blank. This isn't a substitute for testing the native iOS/Android
+  build — fonts, safe areas, the blurred glass tab bar, and native module
+  behavior (see the `expo-sqlite` note below) can all differ on device —
+  but it exercises the same JS logic and catches a class of bug static
+  checks can't.
+
+Bugs this found and fixed: an 오행 percentage-rounding bug that could sum to
+101 instead of 100 (`ganzhi.ts`, now largest-remainder rounded); a real race
+between the login screen's own "already signed in" redirect and the guest
+sign-in flow's redirect, where whichever fired first could send a guest to
+onboarding instead of the sample-chart home screen it's supposed to skip to
+(now a single effect owns that decision); and local storage calls
+(`state/storage.ts`) that could hang forever instead of failing fast when the
+underlying store is unavailable — verified via `expo-sqlite`'s web backend,
+which doesn't work in this dev setup and hung rather than erroring. All three
+were real correctness bugs, not test-script issues.
+
 ## Known gaps, called out on purpose
 
 - **Kakao/Apple login isn't wired to their native SDKs.** The backend
@@ -62,6 +97,13 @@ offline: charts and scores are computed and cached on-device.
   handoff's rule ①) but shouldn't be presented as a canonical formula.
 - **Pretendard isn't bundled** (no Google Fonts distribution); UI falls back
   to the platform system sans. Noto Serif KR is loaded for headlines.
+- **`expo-sqlite`'s web backend doesn't load in this dev sandbox** (its web
+  worker bundle 404s) — `state/storage.ts` times out and degrades to
+  "nothing persisted" rather than hanging, so the app still works on web,
+  it just won't remember anything across a page reload there. Native
+  (iOS/Android) uses `expo-sqlite`'s real SQLite backend and isn't affected;
+  this is worth a second look if web is ever a real target, not just a dev
+  convenience.
 - **One chart per user** on the backend — family/multi-profile sync (screen
   07) isn't modeled yet.
 - 세운/대운/행운 아이템 all derive from the real chart (no fixture data), but

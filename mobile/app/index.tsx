@@ -9,6 +9,7 @@ import { Button } from '../src/components/Button';
 import { useAuth } from '../src/state/AuthContext';
 import { useChart } from '../src/state/ChartContext';
 import { areaPath, series, smoothPath } from '../src/lib/curve';
+import { SAMPLE_BIRTH_INPUT } from '../src/lib/bazi/sample';
 
 const VALUE_PROPS = [
   { glyph: '日', hint: 4, label: '오늘 하루의 결과 좋은 시간' },
@@ -19,19 +20,29 @@ const VALUE_PROPS = [
 export default function LoginScreen() {
   const { colors } = useTheme();
   const { provider, loading: authLoading, signIn } = useAuth();
-  const { chart, loading: chartLoading } = useChart();
+  const { chart, loading: chartLoading, createChart } = useChart();
 
+  // Single place that decides where a known auth+chart state should land — both a
+  // returning user (already signed in on relaunch) and an in-flight sign-in funnel
+  // through this same effect, so there's exactly one navigation decision, not two
+  // racing ones. Guest browsing seeds a sample chart here (handoff §4 note, 01·02)
+  // so 03/04 open immediately without a data-entry detour.
   useEffect(() => {
     if (authLoading || chartLoading) return;
-    if (provider && chart) router.replace('/home');
-    else if (provider && !chart) router.replace('/onboarding');
-  }, [authLoading, chartLoading, provider, chart]);
+    if (!provider) return;
+    if (chart) {
+      router.replace('/home');
+    } else if (provider === 'guest') {
+      createChart(SAMPLE_BIRTH_INPUT, 'guest-sample').then(() => router.replace('/home'));
+    } else {
+      router.replace('/onboarding');
+    }
+  }, [authLoading, chartLoading, provider, chart, createChart]);
 
   const curvePts = series([40, 58, 46, 70, 62, 84, 74], 318, 140);
 
-  const go = async (p: 'kakao' | 'apple' | 'email' | 'guest') => {
-    await signIn(p);
-    router.replace(p === 'guest' ? '/home' : '/onboarding');
+  const go = (p: 'kakao' | 'apple' | 'email' | 'guest') => {
+    signIn(p);
   };
 
   return (

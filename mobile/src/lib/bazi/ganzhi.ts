@@ -119,9 +119,22 @@ export function elementDistribution(pillars: PillarResult['pillars']): Record<El
   add(pillars.day);
   add(pillars.hour);
   const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+
+  // Largest-remainder rounding: rounding each share independently can overshoot or
+  // undershoot 100 by a point or two, and the type's contract (and the 05 screen's
+  // 오행 bars) both assume the five values sum to exactly 100.
+  const elements = Object.keys(counts) as Element[];
+  const shares = elements.map((el) => (counts[el] / total) * 100);
+  const floors = shares.map(Math.floor);
+  const remainder = 100 - floors.reduce((a, b) => a + b, 0);
+  const order = elements
+    .map((el, i) => ({ i, frac: shares[i] - floors[i] }))
+    .sort((a, b) => b.frac - a.frac);
+  for (let k = 0; k < remainder; k++) floors[order[k].i] += 1;
+
   const out = {} as Record<Element, number>;
-  (Object.keys(counts) as Element[]).forEach((el) => {
-    out[el] = Math.round((counts[el] / total) * 100);
+  elements.forEach((el, i) => {
+    out[el] = floors[i];
   });
   return out;
 }
