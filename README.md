@@ -1,11 +1,19 @@
 # 사주 캘린더
 
 Implementation of the `사주 캘린더 앱.dc.html` design handoff. Built so far:
-01 로그인 → 02 정보 입력 → 16 계산 대기 → 03 홈·월간 캘린더 → 04 상세, plus
-05 내 사주 원국 풀이, 09 설정 (+ 09-2 회원탈퇴 확인), 12 하루 기록, and
-19 관계 + 11 궁합. The floating tab bar's 문답 icon is still a stub (needs
-an LLM integration decision — see below); 가족 그룹, 구독, 위젯, and the
-rest of round 2/3/4 aren't built yet.
+
+- **진입/매일**: 01 로그인 → 02 정보 입력 → 16 계산 대기 → 03 홈·월간
+  캘린더 → 04 상세
+- **이해**: 05 내 사주 원국 풀이, 23 연간 뷰
+- **재방문 고리**: 12 하루 기록, 13 월간 결산
+- **관계**: 19 관계 목록·추가, 11 궁합
+- **관리**: 09 설정 (+ 09-2 회원탈퇴), 17 알림함, 28 앱 정보 (+ 계산 기준
+  서브페이지)
+
+The floating tab bar's 문답 icon is still a stub (needs an LLM integration
+decision — see below). Not built yet: 가족 그룹(07), 구독/결제(08·21),
+위젯(06), 다크모드 전용 화면(24), 빈/에러/오프라인 상태(22), 문답·궁합
+연동 AI 화면(10·18·26), 지난 일 맞춰보기(25), 체감 보정(27).
 
 - `mobile/` — React Native (Expo, TypeScript, Expo Router)
 - `backend/` — Java Spring Boot (PostgreSQL, JWT auth)
