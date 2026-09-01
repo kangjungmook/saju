@@ -25,4 +25,4 @@ Get-Content ".env" | ForEach-Object {
     }
 }
 
-mvn spring-boot:run
+.\mvnw.cmd spring-boot:run

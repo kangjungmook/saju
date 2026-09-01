@@ -13,4 +13,4 @@ set -a
 source .env
 set +a
 
-exec mvn spring-boot:run
+exec ./mvnw spring-boot:run
