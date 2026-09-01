@@ -18,13 +18,32 @@ across devices/reinstalls once they're signed in.
 
 ## Running it
 
-**Backend** (needs a local Postgres; defaults in `application.yml` assume
-`localhost:5432/saju` / `saju:saju`):
+**Backend** — uses [Supabase](https://supabase.com) as the hosted Postgres
+(Spring Boot/JPA talks to it over plain JDBC; Supabase's own Auth/Data API
+aren't used — our own JWT layer stays as-is):
 
 ```
 cd backend
-mvn spring-boot:run
+cp .env.example .env   # fill in your Supabase project's values, see comments in the file
+./run-local.sh
 ```
+
+Use the **Session pooler** connection string from Supabase (Project →
+Connect → Connection string → URI), not "Direct connection" — direct
+connections are IPv6-only unless you pay for the IPv4 add-on, and most
+dev/CI networks are IPv4-only. `.env` is gitignored; never commit real
+credentials into `application.yml` or anywhere else.
+
+No local Postgres needed. `spring.jpa.hibernate.ddl-auto=update` creates the
+schema automatically as tables show up in the entity model.
+
+> **Not yet verified end-to-end**: this development sandbox's network policy
+> only allows outbound traffic to a small allowlist (package registries,
+> etc.) — a raw TCP connection to Supabase's Postgres port is blocked here,
+> confirmed via DNS resolving correctly but the connection itself timing out.
+> The config is right (host/user from your own Connect dialog, Session
+> pooler for IPv4), but run `./run-local.sh` yourself once to confirm it
+> actually reaches your Supabase project and Hibernate creates the tables.
 
 **Mobile** (point it at the backend via `EXPO_PUBLIC_API_BASE_URL` or edit
 `extra.apiBaseUrl` in `app.json`; defaults to `http://localhost:8080`):
