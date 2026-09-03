@@ -3,9 +3,12 @@ import { dayPillarFromJDN, hourBranchIndex, ZHI } from '../ganzhi';
 import { hourRange, hourRangeLabel } from '../derived';
 import { solarTermJDE } from '../solar';
 import { computeChart } from '../index';
-import { computeDayScore } from '../dayScore';
+import { computeDayScore, applyCalibration } from '../dayScore';
+import { computeCalibrationDeltas } from '../calibration';
+import { DayLog } from '../../../types/domain';
 import { lunarToSolarKST, solarToLunarKST } from '../lunar';
 import { absoluteJDEtoKST } from '../time';
+import { parseTimePoint, twelveMonthsFrom } from '../../timePhrase';
 
 describe('day pillar (sexagenary cycle)', () => {
   it('matches the well-documented historical anchor: 1900-01-31 = 갑진일', () => {
@@ -169,5 +172,86 @@ describe('score determinism across chart recomputation (handoff §1 rule ①)', 
     const sameCount = ['2026-01-01', '2026-09-03', '2027-06-15']
       .filter((d) => computeDayScore(a, d).raw === computeDayScore(b, d).raw).length;
     expect(sameCount).toBeLessThan(3);
+  });
+});
+
+describe('26 결정 저울 — timing parsed out of a free-text branch', () => {
+  const NOW = new Date(2026, 9, 15); // 2026-10-15; October, so "9월" has passed
+
+  it('reads a bare month as the next time it comes round', () => {
+    expect(parseTimePoint('9월에 이직한다', NOW)).toEqual({ year: 2027, month: 9 });
+    expect(parseTimePoint('12월에 정리한다', NOW)).toEqual({ year: 2026, month: 12 });
+  });
+
+  it('honours an explicit or relative year', () => {
+    expect(parseTimePoint('내년 3월에 옮긴다', NOW)).toEqual({ year: 2027, month: 3 });
+    expect(parseTimePoint('올해 12월', NOW)).toEqual({ year: 2026, month: 12 });
+    expect(parseTimePoint('2029년 5월', NOW)).toEqual({ year: 2029, month: 5 });
+  });
+
+  it('understands seasons and relative months', () => {
+    expect(parseTimePoint('내년 봄까지 버틴다', NOW)).toEqual({ year: 2027, month: 3 });
+    expect(parseTimePoint('가을쯤', NOW)).toEqual({ year: 2027, month: 9 });
+    expect(parseTimePoint('다음 달에 결정', NOW)).toEqual({ year: 2026, month: 11 });
+  });
+
+  it('returns null when there is no timing to find, rather than guessing one', () => {
+    expect(parseTimePoint('그냥 버틴다', NOW)).toBeNull();
+    expect(parseTimePoint('', NOW)).toBeNull();
+    expect(parseTimePoint('13월', NOW)).toBeNull();
+  });
+
+  it('walks twelve months forward across a year boundary', () => {
+    const months = twelveMonthsFrom({ year: 2026, month: 11 });
+    expect(months).toHaveLength(12);
+    expect(months[0]).toEqual({ year: 2026, month: 11 });
+    expect(months[2]).toEqual({ year: 2027, month: 1 });
+    expect(months[11]).toEqual({ year: 2027, month: 10 });
+  });
+});
+
+describe('27 체감 보정 — learns a signed bias and stays reversible', () => {
+  const chart = computeChart('u1', 'c1', { date: '1997-03-21', time: '05:30', calendar: 'solar', region: '서울', gender: 'female' });
+
+  function logsFor(dates: string[], felt: 1 | 2 | 3 | 4 | 5): DayLog[] {
+    return dates.map((date) => ({
+      chartId: chart.id, date, felt, note: '', tags: [],
+      predictedRaw: computeDayScore(chart, date).raw,
+    }));
+  }
+
+  it('reads a positive bias when days land better than predicted', () => {
+    const dates = Array.from({ length: 20 }, (_, i) => `2026-0${1 + (i % 9)}-${String(1 + i).padStart(2, '0')}`);
+    const { byElement, sampleSize } = computeCalibrationDeltas(logsFor(dates, 5));
+    expect(sampleSize).toBe(20);
+    // felt 5 sits at 90; every element that got samples should read positive.
+    const touched = (Object.values(byElement) as number[]).filter((v) => v !== 0);
+    expect(touched.length).toBeGreaterThan(0);
+    expect(touched.every((v) => v > 0)).toBe(true);
+  });
+
+  it('reads a negative bias in the other direction, and clamps to ±20', () => {
+    const dates = Array.from({ length: 20 }, (_, i) => `2026-0${1 + (i % 9)}-${String(1 + i).padStart(2, '0')}`);
+    const { byElement } = computeCalibrationDeltas(logsFor(dates, 1));
+    const touched = (Object.values(byElement) as number[]).filter((v) => v !== 0);
+    expect(touched.every((v) => v < 0)).toBe(true);
+    expect(touched.every((v) => v >= -20)).toBe(true);
+  });
+
+  it('returns the untouched raw score when switched off — handoff §4, note for 27', () => {
+    const byElement = { 木: 12, 火: -8, 土: 5, 金: 0, 水: 20 } as const;
+    for (const raw of [0, 33, 50, 78, 100]) {
+      expect(applyCalibration(raw, '水', { ...byElement }, 1, false)).toBe(raw);
+      expect(applyCalibration(raw, '水', { ...byElement }, 0, true)).toBe(raw);
+    }
+  });
+
+  it('moves the score by the element delta, scaled by strength, and stays in range', () => {
+    const byElement = { 木: 12, 火: -8, 土: 5, 金: 0, 水: 20 } as const;
+    expect(applyCalibration(50, '水', { ...byElement }, 1, true)).toBe(70);
+    expect(applyCalibration(50, '水', { ...byElement }, 0.5, true)).toBe(60);
+    expect(applyCalibration(50, '火', { ...byElement }, 1, true)).toBe(42);
+    expect(applyCalibration(95, '水', { ...byElement }, 1, true)).toBe(100); // clamped
+    expect(applyCalibration(5, '火', { ...byElement }, 1, true)).toBe(0); // clamped
   });
 });

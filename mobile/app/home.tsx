@@ -287,7 +287,12 @@ export default function HomeScreen() {
             {lucky && (
               <View style={styles.chipRow}>
                 {bestHour && (
-                  <Chip colors={colors} glyph={HANZHI[zhiIndexOf(bestHour)]} label={hourRangeLabel(bestHour)} />
+                  <Chip
+                    colors={colors}
+                    glyph={HANZHI[zhiIndexOf(bestHour)]}
+                    label={hourRangeLabel(bestHour)}
+                    onPress={() => router.push('/hourly')}
+                  />
                 )}
                 <Chip colors={colors} glyph={lucky.color.hanja} label={lucky.color.name} />
                 <Chip colors={colors} glyph={lucky.direction.hanja} label={lucky.direction.label} />
@@ -433,12 +438,23 @@ export default function HomeScreen() {
   );
 }
 
-function Chip({ colors, glyph, label }: { colors: any; glyph: string; label: string }) {
-  return (
-    <View style={[styles.chip, { backgroundColor: colors.surface2 }]}>
+function Chip({ colors, glyph, label, onPress }: { colors: any; glyph: string; label: string; onPress?: () => void }) {
+  const body = (
+    <>
       <Text style={{ fontFamily: fonts.serif, fontSize: 12, color: colors.ink2 }}>{glyph}</Text>
       <Text style={{ fontSize: 11.5, color: colors.ink2 }}>{label}</Text>
-    </View>
+    </>
+  );
+  if (!onPress) return <View style={[styles.chip, { backgroundColor: colors.surface2 }]}>{body}</View>;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${label} — 시간대별 흐름 보기`}
+      onPress={onPress}
+      style={({ pressed }) => [styles.chip, { backgroundColor: colors.surface2 }, pressed && { opacity: 0.7 }]}
+    >
+      {body}
+    </Pressable>
   );
 }
 

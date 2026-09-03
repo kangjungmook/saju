@@ -148,6 +148,10 @@ export default function MySajuScreen() {
         <View style={{ height: space.sm }} />
         <Button label="올해 흐름 한눈에 보기" variant="outline" onPress={() => router.push('/yearview')} />
         <View style={{ height: space.sm }} />
+        <Button label="지난 일 맞춰보기" variant="outline" onPress={() => router.push('/recall')} />
+        <View style={{ height: space.sm }} />
+        <Button label="두 선택 겹쳐보기" variant="outline" onPress={() => router.push('/decision')} />
+        <View style={{ height: space.sm }} />
         <Button
           label="생년월일시 다시 입력하기"
           variant="outline"

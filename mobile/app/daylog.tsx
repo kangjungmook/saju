@@ -14,16 +14,25 @@ import { DayScore } from '../src/types/domain';
 import { todayISO, trailingDates } from '../src/lib/date';
 
 /**
- * One line each, not the two-line labels the mock drew. Stacked labels made
- * five narrow cards read as a wall of text, which is most of why this step
- * felt confusing to use.
+ * These rate **the day itself**, not how accurate the app was.
+ *
+ * `DayLog.felt` is consumed everywhere else as the day's real band on the same
+ * 1-5 scale as `bandFromScore` — 13 월간 결산 computes its 예측이 맞은 비율 as
+ * `|bandFromScore(predictedRaw) - felt| <= 1`, and 27 체감 보정 needs the
+ * *signed* gap between what the app said and what actually happened. An
+ * accuracy answer ("얼마나 맞았나") has no sign: it can't tell whether the app
+ * ran high or low, so it can't calibrate anything. The wording follows the
+ * meaning the data model already had.
+ *
+ * One line each, not the mock's two-line labels — stacked text made five narrow
+ * cards read as a wall.
  */
 const FELT_OPTIONS: { felt: 1 | 2 | 3 | 4 | 5; label: string }[] = [
-  { felt: 1, label: '전혀' },
-  { felt: 2, label: '조금' },
-  { felt: 3, label: '반반' },
-  { felt: 4, label: '비슷' },
-  { felt: 5, label: '딱 맞음' },
+  { felt: 1, label: '많이 얕음' },
+  { felt: 2, label: '얕음' },
+  { felt: 3, label: '보통' },
+  { felt: 4, label: '좋음' },
+  { felt: 5, label: '아주 좋음' },
 ];
 const SUGGESTED_TAGS = ['#연락', '#일', '#컨디션', '#관계', '#지출'];
 const WINDOW_DAYS = 28;
@@ -181,10 +190,10 @@ export default function DayLogScreen() {
               }}
             >
               <Text style={{ fontSize: 13, fontWeight: '600', color: colors.ink }}>
-                앱은 {todayScore.raw}점이라고 했어요. 얼마나 맞았나요?
+                오늘 하루는 실제로 어땠나요?
               </Text>
               <Text style={{ fontSize: 11.5, lineHeight: 18, color: colors.ink2, marginTop: 6, marginBottom: space.md }}>
-                답이 쌓이면 점수를 나에게 맞춰 조정해요.
+                앱은 {todayScore.raw}점으로 봤어요. 답이 쌓이면 점수를 나에게 맞춰 조정합니다.
               </Text>
               <View style={styles.feltRow}>
                 {FELT_OPTIONS.map((opt, i) => {
@@ -229,7 +238,7 @@ export default function DayLogScreen() {
               </View>
               {askingForFelt && (
                 <Text style={{ fontSize: 12, color: colors.ink2, marginTop: space.md }}>
-                  얼마나 맞았는지 먼저 골라주세요.
+                  오늘 하루가 어땠는지 먼저 골라주세요.
                 </Text>
               )}
             </View>

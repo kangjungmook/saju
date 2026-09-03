@@ -297,3 +297,69 @@ export function hourRangeLabel(zhi: Zhi): string {
   if (startPM === endPM) return `${clockLabel(startHour).replace('시', '')}–${end12}시`;
   return `${clockLabel(startHour)}–${clockLabel(endHour)}`;
 }
+
+const AGE_TENS = ['', '열', '스물', '서른', '마흔', '쉰', '예순', '일흔', '여든', '아흔'];
+const AGE_ONES = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉'];
+
+/** "스물두 살" — 25's year card labels the age the way the design writes it. */
+export function koreanAge(age: number): string {
+  if (age < 10 || age > 99) return `${age}살`;
+  const t = Math.floor(age / 10);
+  const o = age % 10;
+  return `${AGE_TENS[t]}${AGE_ONES[o]} 살`.replace('  ', ' ');
+}
+
+export interface PastYearReading {
+  year: number;
+  age: number;
+  daeun: GanZhi | null;
+  score: number;
+  bestMonth: number;
+  line: string;
+}
+
+/**
+ * What 25 지난 일 맞춰보기 says about one past year, *before* asking whether it
+ * landed. The handoff's note for 25 is explicit that the reading comes first
+ * and the question second — reversed, it stops being a trust device and turns
+ * into a survey.
+ *
+ * Everything here is the same machinery the rest of the app runs on: the year's
+ * own 세운 score, the strongest month from `monthScore`, and the 대운 the user
+ * was actually in at that age.
+ */
+export function pastYearReading(chart: Chart, year: number): PastYearReading {
+  const birthYear = Number(chart.birth.date.slice(0, 4));
+  const age = year - birthYear + 1; // Korean counting, as the 대운 table uses
+  const daeun = chart.luckCycles.find((c) => c.startAge <= age && age <= c.endAge)?.pillar ?? null;
+
+  const months = Array.from({ length: 12 }, (_, i) => ({ m: i + 1, s: monthScore(chart, year, i + 1) }));
+  const best = months.reduce((a, b) => (b.s > a.s ? b : a));
+  const score = Math.round(months.reduce((a, b) => a + b.s, 0) / 12);
+
+  const line =
+    score >= 62
+      ? `그해 ${best.m}월에 가장 크게 트였습니다.`
+      : score <= 45
+        ? `그해는 대체로 얕았고, ${best.m}월쯤 한 번 숨이 트였습니다.`
+        : `크게 요동치지 않았고, ${best.m}월이 가장 나았습니다.`;
+
+  return { year, age, daeun, score, bestMonth: best.m, line };
+}
+
+/**
+ * Past years worth asking about, most distinctive first — a year that scored
+ * near the middle is one nobody can confirm or deny, so it proves nothing.
+ * Starts at age 15; earlier years are rarely recalled in the terms this asks.
+ */
+export function recallCandidateYears(chart: Chart): number[] {
+  const birthYear = Number(chart.birth.date.slice(0, 4));
+  const thisYear = new Date().getFullYear();
+  const from = birthYear + 14;
+  if (thisYear - 1 < from) return [];
+  const years = Array.from({ length: thisYear - from }, (_, i) => from + i);
+  return years
+    .map((y) => ({ y, distance: Math.abs(pastYearReading(chart, y).score - 50) }))
+    .sort((a, b) => b.distance - a.distance)
+    .map((e) => e.y);
+}

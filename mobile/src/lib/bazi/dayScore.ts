@@ -85,7 +85,7 @@ export function computeDayScore(chart: Chart, dateISO: string, scoreVersion = 'b
   const raw = Math.max(0, Math.min(100, Math.round(50 + magnitude + texture)));
   const band = raw < 35 ? 1 : raw < 50 ? 2 : raw < 65 ? 3 : raw < 80 ? 4 : 5;
 
-  const bestHours = bestHoursFor(chart, dayGZ);
+  const bestHours = bestHoursFor(chart, dateISO);
 
   return {
     chartId: chart.id,
@@ -100,16 +100,40 @@ export function computeDayScore(chart: Chart, dateISO: string, scoreVersion = 'b
   };
 }
 
-function bestHoursFor(chart: Chart, dayGZ: GanZhi): Zhi[] {
+/**
+ * The twelve 시진 of one day, scored 0-100 — 15 시간대별 흐름's rows, and the
+ * source `bestHours` is picked from.
+ *
+ * Same shape as the day model above so the two can't disagree: the hour pillar
+ * for that 시 is placed off the day's stem, related to the day master through
+ * the same 生剋 weights, scaled by the same scarcity term, and given the same
+ * deterministic texture (seeded on birth details + date + branch, so a given
+ * hour of a given day always reads the same). It sits around the day's own
+ * score rather than floating free, because an hour is a part of that day, not
+ * an independent reading.
+ */
+export function hourScores(chart: Chart, dateISO: string): { zhi: Zhi; score: number }[] {
+  const [y, m, d] = dateISO.split('-').map(Number);
+  const dayGZ = dayPillarFromJDN(toJDN(y, m, d));
   const dayGanIdx = ganIndexOf(dayGZ.gan);
   const dayMasterElement = GAN_ELEMENT[ganIndexOf(chart.dayMaster)];
-  const scored = ZHI.map((_, zhiIdx) => {
+  const seed = chartSeed(chart);
+
+  return ZHI.map((zhi, zhiIdx) => {
     const gz = hourPillar(zhiIdx * 2, 0, dayGanIdx);
     const rel = relateElements(gz.element, dayMasterElement);
-    return { zhi: ZHI[zhiIdx], weight: RELATION_WEIGHT[rel] };
+    const scarcity = 1 - (chart.elements[gz.element] ?? 0) / 100;
+    const magnitude = RELATION_WEIGHT[rel] * (0.6 + 0.8 * scarcity);
+    const texture = (seededUnit(`${seed}:${dateISO}:${zhi}`) - 0.5) * 10;
+    return { zhi, score: Math.max(0, Math.min(100, Math.round(50 + magnitude + texture))) };
   });
-  scored.sort((a, b) => b.weight - a.weight);
-  return scored.slice(0, 3).map((s) => s.zhi);
+}
+
+function bestHoursFor(chart: Chart, dateISO: string): Zhi[] {
+  return [...hourScores(chart, dateISO)]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map((s) => s.zhi);
 }
 
 /** Applies a Calibration to a raw score, per handoff §2/§4-27: always preserve raw, only move adjusted. */

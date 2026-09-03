@@ -54,3 +54,10 @@ export function streakEndingAt(logged: Set<string>, endDate: string): number {
   }
   return count;
 }
+
+/** Every log this chart has, oldest first — 27 체감 보정 learns from the whole set. */
+export async function getAllDayLogs(chart: Chart): Promise<DayLog[]> {
+  const index = (await getJSON<string[]>(indexKey(chart.id))) ?? [];
+  const logs = await Promise.all(index.map((d) => getDayLog(chart, d)));
+  return logs.filter((l): l is DayLog => l !== null).sort((a, b) => (a.date < b.date ? -1 : 1));
+}

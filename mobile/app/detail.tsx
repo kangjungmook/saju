@@ -238,6 +238,14 @@ export default function DetailScreen() {
             />
           </View>
         </View>
+
+        <View style={{ marginTop: space.lg }}>
+          <Button
+            label="이 날의 시간대별 흐름 보기"
+            variant="outline"
+            onPress={() => router.push({ pathname: '/hourly', params: { date } })}
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -97,5 +97,5 @@ function shiftMinutes(dt: CivilDateTime, minutes: number): CivilDateTime {
 }
 
 export { KR_REGIONS };
-export { computeDayScore, applyCalibration } from './dayScore';
+export { computeDayScore, applyCalibration, hourScores } from './dayScore';
 export { solarToLunarKST, lunarToSolarKST } from './lunar';
