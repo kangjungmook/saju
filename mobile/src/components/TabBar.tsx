@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { RefObject, useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import Svg, { Defs, Path, RadialGradient, Stop, Circle, Ellipse } from 'react-native-svg';
 import { router } from 'expo-router';
@@ -56,10 +56,13 @@ export function TabBar({
   chart,
   collapsed = false,
   onNotReady,
+  blurTarget,
 }: {
   chart: Chart;
   collapsed?: boolean;
   onNotReady: (name: string) => void;
+  /** Android-only: ref to the `BlurTargetView` wrapping the content behind the bar. */
+  blurTarget?: RefObject<View | null>;
 }) {
   const { colors, scheme } = useTheme();
   const dayMasterHan = HANGAN[ganIndexOf(chart.dayMaster)];
@@ -105,12 +108,21 @@ export function TabBar({
     >
       <View style={styles.clip}>
         {/* expo-blur's web output is roughly intensity × 0.2 px of blur, so 90
-            lands near the design's blur(22px); Android's blur is a much more
-            expensive path, kept lower on purpose. */}
+            lands near the design's blur(22px).
+
+            Android is not like the other two here. As of SDK 57 its blur reads
+            from a `blurTarget` — a `BlurTargetView` wrapping the content to be
+            blurred — and if that ref is missing the component silently falls
+            back to `blurMethod: 'none'`, which is a plain translucent view,
+            i.e. exactly the unblurred bar this change exists to fix. So the
+            method is only requested once we actually have the target.
+            `dimezisBlurViewSdk31Plus` over `dimezisBlurView` because the
+            latter is documented to cost performance on Android SDK ≤ 30. */}
         <BlurView
-          intensity={Platform.OS === 'android' ? 60 : 90}
+          intensity={90}
           tint={isDark ? 'dark' : 'light'}
-          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+          blurTarget={blurTarget}
+          blurMethod={blurTarget ? 'dimezisBlurViewSdk31Plus' : 'none'}
           style={StyleSheet.absoluteFill}
         />
         {/* The design's fill sits on top of the blur at 0.62 alpha, with a

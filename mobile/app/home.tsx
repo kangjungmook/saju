@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -14,6 +14,7 @@ import { Chart, DayScore, Relation } from '../src/types/domain';
 import { HANGAN, HANZHI, GAN_ELEMENT, ganIndexOf, zhiIndexOf } from '../src/lib/bazi/ganzhi';
 import { computeLuckyItems, currentAge, hourRangeLabel, monthlyHeadline, calendarMonthPillar, yearGanZhiHanja } from '../src/lib/bazi/derived';
 import { computeCounterpartChart, sharedDayScore } from '../src/lib/bazi/compatibility';
+import { BlurTargetView } from 'expo-blur';
 import { TabBar, useTabBarScroll } from '../src/components/TabBar';
 import { isoOf, todayISO } from '../src/lib/date';
 
@@ -64,6 +65,7 @@ export default function HomeScreen() {
   const [loggedYesterday, setLoggedYesterday] = useState(true);
   const [partner, setPartner] = useState<{ relation: Relation; chart: Chart } | null>(null);
   const tabScroll = useTabBarScroll();
+  const blurTarget = useRef<View | null>(null);
 
   useEffect(() => {
     if (!chartLoading && !chart) router.replace('/onboarding');
@@ -221,6 +223,10 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.fill, { backgroundColor: colors.bg }]} edges={['top']}>
+      {/* Everything the tab bar floats over lives inside the BlurTargetView:
+          on Android that's what expo-blur actually samples to blur, and on
+          iOS/web it compiles down to a plain View. */}
+      <BlurTargetView ref={blurTarget} style={styles.fill}>
       {lateZiHour && (
         <View style={[styles.ziBanner, { backgroundColor: colors.surface2 }]}>
           <Text style={{ fontSize: 12, color: colors.ink2 }}>지금은 이미 다음 날 자시예요</Text>
@@ -422,7 +428,9 @@ export default function HomeScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      <TabBar chart={chart} collapsed={tabScroll.collapsed} onNotReady={notReady} />
+      </BlurTargetView>
+
+      <TabBar chart={chart} collapsed={tabScroll.collapsed} onNotReady={notReady} blurTarget={blurTarget} />
     </SafeAreaView>
   );
 }

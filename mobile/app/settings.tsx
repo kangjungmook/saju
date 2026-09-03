@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useTheme } from '../src/theme/ThemeProvider';
-import { fonts, space } from '../src/theme/tokens';
+import { useTheme, ThemeMode, THEME_MODE_LABELS } from '../src/theme/ThemeProvider';
+import { fonts, space, minTouchTarget } from '../src/theme/tokens';
 import { useAuth } from '../src/state/AuthContext';
 import { useChart } from '../src/state/ChartContext';
 import { getJSON, setJSON } from '../src/state/storage';
@@ -24,7 +24,7 @@ function notReady(name: string) {
 }
 
 export default function SettingsScreen() {
-  const { colors } = useTheme();
+  const { colors, mode, setMode } = useTheme();
   const { provider, signOut } = useAuth();
   const { chart } = useChart();
   const [toggles, setToggles] = useState(DEFAULT_TOGGLES);
@@ -95,6 +95,37 @@ export default function SettingsScreen() {
 
         <View style={{ height: space.xl }} />
 
+        <SectionLabel colors={colors} text="화면" />
+        <View style={styles.segmentRow}>
+          {(['system', 'light', 'dark'] as ThemeMode[]).map((m) => {
+            const selected = mode === m;
+            return (
+              <Pressable
+                key={m}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`화면 테마 ${THEME_MODE_LABELS[m]}`}
+                onPress={() => setMode(m)}
+                style={[
+                  styles.segment,
+                  selected
+                    ? { backgroundColor: colors.surface, borderColor: colors.ink, borderWidth: 1.5 }
+                    : { backgroundColor: colors.surface, borderColor: colors.line, borderWidth: StyleSheet.hairlineWidth },
+                ]}
+              >
+                <Text style={{ fontSize: 13.5, fontWeight: selected ? '600' : '400', color: selected ? colors.ink : colors.ink2 }}>
+                  {THEME_MODE_LABELS[m]}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Text style={{ fontSize: 12, lineHeight: 18, color: colors.ink2, paddingTop: space.sm }}>
+          다크는 색을 뒤집지 않고 밝기만 낮춘 별도 팔레트예요.
+        </Text>
+
+        <View style={{ height: space.xl }} />
+
         <SectionLabel colors={colors} text="안내" />
         <View>
           <Row colors={colors} label="알림함" onPress={() => router.push('/notifications')} />
@@ -143,6 +174,8 @@ const styles = StyleSheet.create({
   navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   scroll: { paddingHorizontal: space.lg, paddingBottom: space.xl },
   title: { fontSize: 28, fontWeight: '600', paddingVertical: space.sm, marginBottom: space.base },
+  segmentRow: { flexDirection: 'row', gap: space.sm, paddingTop: space.xs },
+  segment: { flex: 1, minHeight: minTouchTarget, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 56, paddingVertical: space.sm },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: space.base, minHeight: 64, paddingVertical: space.sm },
   track: { width: 48, height: 30, borderRadius: 15, padding: 3, justifyContent: 'center' },
