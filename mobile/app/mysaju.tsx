@@ -144,14 +144,10 @@ export default function MySajuScreen() {
           </View>
         )}
 
-        <Button label="지난 달 결산 보기" variant="outline" onPress={() => router.push('/monthreport')} />
-        <View style={{ height: space.sm }} />
-        <Button label="올해 흐름 한눈에 보기" variant="outline" onPress={() => router.push('/yearview')} />
-        <View style={{ height: space.sm }} />
-        <Button label="지난 일 맞춰보기" variant="outline" onPress={() => router.push('/recall')} />
-        <View style={{ height: space.sm }} />
-        <Button label="두 선택 겹쳐보기" variant="outline" onPress={() => router.push('/decision')} />
-        <View style={{ height: space.sm }} />
+        {/* The four other destinations that used to stack up here — 결산, 연간,
+            맞춰보기, 결정 저울 — moved to the 전체 tab. Five outline buttons in a
+            column was the "버튼 지옥" the design principles rule out, and none of
+            them were about 원국, which is what this screen is for. */}
         <Button
           label="생년월일시 다시 입력하기"
           variant="outline"

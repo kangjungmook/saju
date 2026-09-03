@@ -7,8 +7,6 @@ import { ScreenHeader } from '../src/components/ScreenHeader';
 import { fonts, space, minTouchTarget } from '../src/theme/tokens';
 import { useAuth } from '../src/state/AuthContext';
 import { useChart } from '../src/state/ChartContext';
-import { getAllDayLogs } from '../src/state/logs';
-import { CALIBRATION_MIN_LOGS } from '../src/state/calibration';
 import { getJSON, setJSON } from '../src/state/storage';
 
 const TOGGLE_KEY = 'settings:notifications';
@@ -31,17 +29,12 @@ export default function SettingsScreen() {
   const { provider, signOut } = useAuth();
   const { chart } = useChart();
   const [toggles, setToggles] = useState(DEFAULT_TOGGLES);
-  const [logCount, setLogCount] = useState(0);
 
   useEffect(() => {
     getJSON<Record<ToggleKey, boolean>>(TOGGLE_KEY).then((saved) => {
       if (saved) setToggles(saved);
     });
   }, []);
-
-  useEffect(() => {
-    if (chart) getAllDayLogs(chart).then((l) => setLogCount(l.length));
-  }, [chart]);
 
   const flip = (key: ToggleKey) => {
     const next = { ...toggles, [key]: !toggles[key] };
@@ -98,24 +91,6 @@ export default function SettingsScreen() {
         </View>
 
         <View style={{ height: space.xl }} />
-
-        {/* Handoff §4, note for 27: the entry itself is hidden below 14 days of
-            records, so nobody is offered a calibration built on nothing. */}
-        {logCount >= CALIBRATION_MIN_LOGS && (
-          <>
-            <SectionLabel colors={colors} text="풀이" />
-            <View>
-              <Row
-                colors={colors}
-                label="나에게 맞춘 풀이"
-                value={`기록 ${logCount}일`}
-                onPress={() => router.push('/calibration')}
-                last
-              />
-            </View>
-            <View style={{ height: space.xl }} />
-          </>
-        )}
 
         <SectionLabel colors={colors} text="화면" />
         <View style={styles.segmentRow}>

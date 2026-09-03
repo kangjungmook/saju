@@ -433,7 +433,7 @@ export default function HomeScreen() {
 
       </BlurTargetView>
 
-      <TabBar chart={chart} collapsed={tabScroll.collapsed} onNotReady={notReady} blurTarget={blurTarget} />
+      <TabBar chart={chart} collapsed={tabScroll.collapsed} active="calendar" onNotReady={notReady} blurTarget={blurTarget} />
     </SafeAreaView>
   );
 }
