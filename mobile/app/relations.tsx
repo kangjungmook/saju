@@ -6,6 +6,7 @@ import { useTheme } from '../src/theme/ThemeProvider';
 import { fonts, space } from '../src/theme/tokens';
 import { Button } from '../src/components/Button';
 import { SelectField } from '../src/components/SelectField';
+import { EmptyState } from '../src/components/EmptyState';
 import { useChart } from '../src/state/ChartContext';
 import { getRelations, saveRelation } from '../src/state/relations';
 import { Relation } from '../src/types/domain';
@@ -80,6 +81,16 @@ export default function RelationsScreen() {
           상대의 생년월일만 있으면 궁합과 잘 맞는 날을 볼 수 있어요.
         </Text>
 
+        {relations.length === 0 && !showForm && (
+          <EmptyState
+            title={'아직 추가한 상대가\n없어요'}
+            description="상대의 생년월일만 있으면 궁합과 잘 맞는 날을 바로 볼 수 있어요."
+            ctaLabel="상대 추가하기"
+            onCta={() => setShowForm(true)}
+          />
+        )}
+
+        {relations.length > 0 && (
         <View style={[styles.list, { borderTopColor: colors.line }]}>
           {relations.map((r) => (
             <Pressable
@@ -106,6 +117,7 @@ export default function RelationsScreen() {
             </Pressable>
           ))}
         </View>
+        )}
 
         {showForm ? (
           <View style={[styles.formCard, { borderColor: colors.line }]}>

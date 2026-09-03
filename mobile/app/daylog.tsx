@@ -5,9 +5,10 @@ import { router } from 'expo-router';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { fonts, space } from '../src/theme/tokens';
 import { Button } from '../src/components/Button';
+import { Toast } from '../src/components/Toast';
 import { useChart } from '../src/state/ChartContext';
 import { getDayScore, getDayScoresRange } from '../src/state/scores';
-import { getDayLog, getLoggedDates, saveDayLog } from '../src/state/logs';
+import { getDayLog, getLoggedDates, removeDayLog, saveDayLog } from '../src/state/logs';
 import { DayScore } from '../src/types/domain';
 import { todayISO, trailingDates } from '../src/lib/date';
 
@@ -35,6 +36,7 @@ export default function DayLogScreen() {
   const [addingTag, setAddingTag] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [saved, setSaved] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   const days = useMemo(() => trailingDates(today, WINDOW_DAYS), [today]);
 
@@ -69,11 +71,29 @@ export default function DayLogScreen() {
     setAddingTag(false);
   };
 
-  const save = async () => {
+  const save = () => {
     if (!chart || !todayScore || felt === null) return;
-    await saveDayLog(chart, { chartId: chart.id, date: today, felt, note, tags, predictedRaw: todayScore.raw });
+    // The in-memory cache in storage.ts commits synchronously inside setJSON, before its
+    // slower underlying-store write settles (which can take seconds — see README) — so the
+    // save is already durable for this session the moment this call is issued. Confirming it
+    // to the user doesn't need to wait on that underlying write too.
+    saveDayLog(chart, { chartId: chart.id, date: today, felt, note, tags, predictedRaw: todayScore.raw }).catch((e) =>
+      console.warn('[daylog] save failed to persist:', e),
+    );
     setLoggedDates((prev) => new Set(prev).add(today));
     setSaved(true);
+    setShowToast(true);
+  };
+
+  const undoSave = () => {
+    if (!chart) return;
+    removeDayLog(chart, today).catch((e) => console.warn('[daylog] undo failed to persist:', e));
+    setLoggedDates((prev) => {
+      const next = new Set(prev);
+      next.delete(today);
+      return next;
+    });
+    setSaved(false);
   };
 
   if (!chart) return <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} />;
@@ -196,6 +216,16 @@ export default function DayLogScreen() {
         </View>
       </ScrollView>
 
+      <View style={styles.toastWrap}>
+        <Toast
+          visible={showToast}
+          message={`기록을 저장했어요 · ${loggedInWindow}일째`}
+          actionLabel="되돌리기"
+          onAction={undoSave}
+          onHide={() => setShowToast(false)}
+        />
+      </View>
+
       <View style={[styles.footer, { borderTopColor: colors.line }]}>
         <Button
           label={saved ? `기록 저장됨 · ${loggedInWindow}일째` : `기록 저장 · ${loggedInWindow + 1}일째`}
@@ -226,4 +256,5 @@ const styles = StyleSheet.create({
   tagAdd: { borderWidth: 1, borderStyle: 'dashed' },
   tagInput: { paddingHorizontal: 12, paddingVertical: space.sm, borderRadius: 999, borderWidth: 1, fontSize: 11.5, minWidth: 90 },
   footer: { padding: space.lg, borderTopWidth: StyleSheet.hairlineWidth },
+  toastWrap: { paddingHorizontal: space.lg },
 });

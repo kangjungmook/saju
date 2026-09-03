@@ -9,6 +9,7 @@ import { useAuth } from '../src/state/AuthContext';
 import { getFamilyMembers, FamilyMember } from '../src/api/client';
 import { computeDayScore } from '../src/lib/bazi/dayScore';
 import { todayISO } from '../src/lib/date';
+import { ErrorCard } from '../src/components/ErrorCard';
 
 const TITLES = ['숨을 고르는 날', '천천히 가도 되는 날', '잔잔하게 흐르는 날', '흐름이 트이는 날', '크게 열리는 날'];
 
@@ -24,23 +25,23 @@ export default function FamilyHomeScreen() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!token) return;
-      getFamilyMembers(token)
-        .then((members) => {
-          setError(null);
-          setRows(
-            members.map((m) => {
-              if (!m.chart) return { member: m, scoreLabel: '아직 사주 정보가 없어요', band: 1 };
-              const score = computeDayScore(m.chart, todayISO());
-              return { member: m, scoreLabel: `오늘 ${score.adjusted} · ${TITLES[score.band - 1]}`, band: score.band };
-            }),
-          );
-        })
-        .catch((e) => setError(e instanceof Error ? e.message : '가족 그룹을 불러오지 못했어요.'));
-    }, [token]),
-  );
+  const load = useCallback(() => {
+    if (!token) return;
+    setError(null);
+    getFamilyMembers(token)
+      .then((members) => {
+        setRows(
+          members.map((m) => {
+            if (!m.chart) return { member: m, scoreLabel: '아직 사주 정보가 없어요', band: 1 };
+            const score = computeDayScore(m.chart, todayISO());
+            return { member: m, scoreLabel: `오늘 ${score.adjusted} · ${TITLES[score.band - 1]}`, band: score.band };
+          }),
+        );
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : '가족 그룹을 불러오지 못했어요.'));
+  }, [token]);
+
+  useFocusEffect(load);
 
   const memberCount = rows?.length ?? 0;
 
@@ -78,7 +79,11 @@ export default function FamilyHomeScreen() {
           서로의 오늘을 볼 수 있어요. 이름을 누르면 그 사람의 흐름이 열립니다.
         </Text>
 
-        {error && <Text style={{ fontSize: 12.5, color: colors.ink2, marginTop: space.lg }}>{error}</Text>}
+        {error && (
+          <View style={{ marginTop: space.lg }}>
+            <ErrorCard title="가족 그룹을 가져오지 못했어요" description={error} onRetry={load} />
+          </View>
+        )}
 
         <View style={{ marginTop: space.xl }}>
           {(rows ?? []).map(({ member, scoreLabel, band }) => (

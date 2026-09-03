@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from '../src/theme/ThemeProvider';
 import { ChartProvider } from '../src/state/ChartContext';
 import { AuthProviderRoot } from '../src/state/AuthContext';
+import { OfflineBanner } from '../src/components/OfflineBanner';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -15,6 +16,7 @@ function RootStack() {
     <>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
+      <OfflineBanner />
     </>
   );
 }

@@ -11,11 +11,18 @@ Implementation of the `사주 캘린더 앱.dc.html` design handoff. Built so fa
   서브페이지)
 - **가족**: 07 가족 그룹 홈(7-1) · 초대 코드 만들기(7-2) · 코드로 참여(7-3)
   · 구성원 상세
+- **상태 컴포넌트 (22)**: not a standalone screen — a reusable set
+  (`EmptyState`, `ErrorCard`, `Toast`, `OfflineBanner`) wired into real
+  places rather than left as fixtures: `relations.tsx`'s empty state,
+  `family.tsx`'s fetch-failure card (real retry, verified against an
+  actual killed/restarted backend), `daylog.tsx`'s save toast (real undo —
+  deletes the just-saved log), and a real-network-state offline banner
+  (`expo-network`'s `useNetworkState`) mounted globally in `app/_layout.tsx`.
 
 The floating tab bar's 문답 icon is still a stub (needs an LLM integration
 decision — see below). Not built yet: 구독/결제(08·21), 위젯(06), 다크모드
-전용 화면(24), 빈/에러/오프라인 상태(22), 문답·궁합 연동 AI 화면(10·18·26),
-지난 일 맞춰보기(25), 체감 보정(27).
+전용 화면(24), 문답·궁합 연동 AI 화면(10·18·26), 지난 일 맞춰보기(25), 체감
+보정(27).
 
 - `mobile/` — React Native (Expo, TypeScript, Expo Router)
 - `backend/` — Java Spring Boot (PostgreSQL, JWT auth)
@@ -118,6 +125,14 @@ visible once sign-in was hitting a real backend instead of failing over
 CORS, since the guest→create-chart→sync sequence had to actually interleave
 with a second effect for the race to fire. Fixed with a "navigate once" ref
 guard. All real correctness bugs, not test-script issues.
+
+Also found while wiring up 22's real save-toast (`daylog.tsx`): the save
+button blocked its own confirmation on the underlying (sometimes multi-second,
+see the `expo-sqlite` note) storage write completing, even though
+`storage.ts`'s in-memory cache — the actual source of truth for the running
+session — is already updated synchronously before that slower write even
+starts. Fixed the same way as `ChartContext.createChart` was earlier: the UI
+confirms immediately and the slow write finishes in the background.
 
 ## Known gaps, called out on purpose
 
