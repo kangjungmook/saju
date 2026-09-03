@@ -1,7 +1,7 @@
 import React, { RefObject, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { BlurView } from 'expo-blur';
-import Svg, { Defs, Path, RadialGradient, Stop, Circle, Ellipse } from 'react-native-svg';
+import Svg, { Defs, G, Path, RadialGradient, Stop, Circle, Ellipse } from 'react-native-svg';
 import { router } from 'expo-router';
 import { useTheme } from '../theme/ThemeProvider';
 import { fonts, motion, minTouchTarget } from '../theme/tokens';
@@ -23,6 +23,7 @@ import { Chart } from '../types/domain';
  * the bar stays tappable in its shrunk state.
  */
 const COMPACT_SCALE = 0.88;
+const CALENDAR_ICON = 'M4 7.5a2 2 0 012-2h12a2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2zM4 10.5h16M8 4v3M16 4v3';
 const SCROLL_DELTA = 12; // ignore jitter; only a deliberate drag moves the bar
 
 export interface TabBarScrollState {
@@ -131,7 +132,8 @@ export function TabBar({
           style={[
             StyleSheet.absoluteFill,
             {
-              backgroundColor: isDark ? 'rgba(33,37,45,0.55)' : 'rgba(255,255,255,0.62)',
+              // 03: oklch(0.995 0.003 265 / 0.62) · 24: oklch(0.30 0.020 265 / 0.66)
+              backgroundColor: isDark ? 'rgba(41,46,56,0.66)' : 'rgba(252,253,255,0.62)',
               borderWidth: StyleSheet.hairlineWidth,
               borderColor: isDark ? 'rgba(239,242,247,0.10)' : 'rgba(29,36,50,0.06)',
               borderRadius: 33,
@@ -139,17 +141,7 @@ export function TabBar({
           ]}
         />
         <View style={styles.row}>
-          <BubbleTab colors={colors} label="캘린더" active>
-            <Svg viewBox="0 0 24 24" width={21} height={21}>
-              <Path
-                d="M4 7.5a2 2 0 012-2h12a2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2zM4 10.5h16M8 4v3M16 4v3"
-                fill="none"
-                stroke={colors.surface}
-                strokeWidth={1.7}
-                strokeLinecap="round"
-              />
-            </Svg>
-          </BubbleTab>
+          <BubbleTab colors={colors} isDark={isDark} label="캘린더" active iconPath={CALENDAR_ICON} />
 
           <PlainTab label="문답" onPress={() => onNotReady('문답')}>
             <Svg viewBox="0 0 24 24" width={21} height={21}>
@@ -197,8 +189,24 @@ export function TabBar({
   );
 }
 
-/** The active tab's 물방울: a radial-lit sphere with a highlight, per 03. */
-function BubbleTab({ colors, label, active, children }: { colors: any; label: string; active?: boolean; children: React.ReactNode }) {
+/**
+ * The active tab's 물방울, with its icon drawn inside the same <Svg>.
+ *
+ * They used to be two siblings — an absolutely-positioned bubble and a
+ * static icon — which meant CSS painting order put the *bubble* on top
+ * (positioned boxes paint after in-flow ones regardless of DOM order), so the
+ * tab rendered as a featureless blue ball with the calendar icon buried under
+ * it. Drawing both in one SVG makes document order the only thing that
+ * decides, on every platform.
+ *
+ * Gradient stops are 03's exact values per theme, and the highlight is a
+ * radial fade rather than a flat ellipse — the design blurs it 1.5px, and a
+ * hard-edged white blob reads as cartoon gloss instead of a wet highlight.
+ */
+function BubbleTab({ colors, isDark, label, active, iconPath }: { colors: any; isDark: boolean; label: string; active?: boolean; iconPath: string }) {
+  const stops = isDark
+    ? ['#A1BDF9', '#6E90DC', '#5776BD'] // oklch(0.800/0.660/0.575 · 0.090/0.120/0.115 265)
+    : ['#B9D1FF', '#8AABF4', '#6D91E1']; // oklch(0.860/0.745/0.665 · 0.075/0.112/0.126 265)
   return (
     <Pressable
       accessibilityLabel={label}
@@ -206,18 +214,25 @@ function BubbleTab({ colors, label, active, children }: { colors: any; label: st
       accessibilityState={{ selected: !!active }}
       style={({ pressed }) => [styles.tab, { transform: [{ scale: pressed ? 0.93 : 1 }] }]}
     >
-      <Svg width={50} height={50} viewBox="0 0 50 50" style={StyleSheet.absoluteFill}>
+      <Svg width={50} height={50} viewBox="0 0 50 50">
         <Defs>
           <RadialGradient id="drop" cx="32%" cy="22%" r="120%">
-            <Stop offset="0%" stopColor={colors.score[3]} />
-            <Stop offset="58%" stopColor={colors.curve} />
-            <Stop offset="100%" stopColor={colors.score[4]} />
+            <Stop offset="0%" stopColor={stops[0]} />
+            <Stop offset="58%" stopColor={stops[1]} />
+            <Stop offset="100%" stopColor={stops[2]} />
+          </RadialGradient>
+          <RadialGradient id="gloss" cx="50%" cy="50%" r="50%">
+            <Stop offset="0%" stopColor="#FFFFFF" stopOpacity={isDark ? 0.34 : 0.42} />
+            <Stop offset="100%" stopColor="#FFFFFF" stopOpacity={0} />
           </RadialGradient>
         </Defs>
         <Circle cx={25} cy={25} r={25} fill="url(#drop)" />
-        <Ellipse cx={21} cy={10.5} rx={10} ry={4.5} fill="rgba(255,255,255,0.42)" />
+        <Ellipse cx={21} cy={12} rx={11} ry={5.5} fill="url(#gloss)" />
+        {/* the 24×24 icon, scaled to 21px and centred in the 50px bubble */}
+        <G transform="translate(14.5 14.5) scale(0.875)">
+          <Path d={iconPath} fill="none" stroke="#FFFFFF" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
+        </G>
       </Svg>
-      {children}
     </Pressable>
   );
 }

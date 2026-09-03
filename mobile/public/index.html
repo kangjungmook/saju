@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<!--
+  Overrides Expo's stock web template (@expo/cli/static/template/index.html),
+  which the CLI picks up from public/index.html ahead of its own. Only two
+  things differ from the stock file; everything else is kept verbatim so future
+  Expo template changes are easy to diff against.
+
+  1. `100dvh` alongside `100%`. Expo's template sizes the root with `height:
+     100%`, which on iOS Safari resolves against the *large* viewport — the one
+     you get with the toolbar collapsed. With the toolbar showing, the root runs
+     further down than the visible area, so anything anchored to its bottom (the
+     floating tab bar) sits above a strip of content and reads as if it were
+     floating mid-page. `100dvh` tracks the visible viewport and follows it as
+     the toolbar shows and hides. `100%` stays first as the fallback.
+
+  2. `viewport-fit=cover` + a safe-area bottom pad, so the page can paint into
+     the home-indicator area while the app's content stays clear of it.
+-->
+<html lang="%LANG_ISO_CODE%">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
+    <title>%WEB_TITLE%</title>
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      /* These styles make the body full-height */
+      html,
+      body {
+        height: 100%;
+        height: 100dvh;
+      }
+      /* These styles disable body scrolling if you are using <ScrollView> */
+      body {
+        overflow: hidden;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        box-sizing: border-box;
+      }
+      /* These styles make the root element full-height */
+      #root {
+        display: flex;
+        height: 100%;
+        height: 100dvh;
+        flex: 1;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Use static rendering with Expo Router to support running without JavaScript. -->
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
+    <!-- The root element for your Expo app. -->
+    <div id="root"></div>
+  </body>
+</html>
