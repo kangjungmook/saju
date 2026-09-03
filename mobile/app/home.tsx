@@ -7,7 +7,7 @@ import { useTheme } from '../src/theme/ThemeProvider';
 import { fonts, space, calendarCellSize, minTouchTarget, bandFromScore } from '../src/theme/tokens';
 import { useChart } from '../src/state/ChartContext';
 import { getDayScore, getDayScoresRange } from '../src/state/scores';
-import { getLoggedDates } from '../src/state/logs';
+import { getLoggedDates, streakEndingAt } from '../src/state/logs';
 import { getRelations } from '../src/state/relations';
 import { hasUnreadNotifications } from '../src/state/notifications';
 import { Chart, DayScore, Relation } from '../src/types/domain';
@@ -91,16 +91,9 @@ export default function HomeScreen() {
       hasUnreadNotifications(todayISO()).then(setUnread);
       getLoggedDates(chart).then((logged) => {
         setLoggedYesterday(logged.has(yesterdayISO()));
-        // Consecutive logged days ending at yesterday (today isn't over yet, so
-        // not logging today shouldn't read as a broken streak).
-        let count = 0;
-        const cursor = new Date();
-        cursor.setDate(cursor.getDate() - 1);
-        while (logged.has(isoOf(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate()))) {
-          count += 1;
-          cursor.setDate(cursor.getDate() - 1);
-        }
-        setStreak(count);
+        // Ends at yesterday: today isn't over yet, so not having logged it
+        // shouldn't read as a broken streak.
+        setStreak(streakEndingAt(logged, yesterdayISO()));
       });
     }, [chart]),
   );
