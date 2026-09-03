@@ -1,7 +1,12 @@
 import Constants from 'expo-constants';
 import { Chart } from '../types/domain';
 
-const API_BASE_URL: string = Constants.expoConfig?.extra?.apiBaseUrl ?? 'http://localhost:8080';
+// EXPO_PUBLIC_* vars are inlined at build time (Metro replaces process.env.EXPO_PUBLIC_*
+// with a literal), so a hosted web build (Vercel etc.) can point at its real backend by
+// setting EXPO_PUBLIC_API_BASE_URL — no app.json edit or rebuild-from-source needed. Falls
+// back to app.json's extra.apiBaseUrl, then localhost, for local dev.
+const API_BASE_URL: string =
+  process.env.EXPO_PUBLIC_API_BASE_URL ?? Constants.expoConfig?.extra?.apiBaseUrl ?? 'http://localhost:8080';
 
 export interface AuthResponse {
   token: string;

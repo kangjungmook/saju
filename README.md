@@ -78,6 +78,72 @@ npm run ios   # or android / web
 Without a JWT (Kakao/Apple not wired — see below) the app still runs fully
 offline: charts and scores are computed and cached on-device.
 
+## Deploying a public web version
+
+Expo's web export is a static SPA bundle — same JS as native, no backend
+change needed beyond CORS. Backend on **Railway** (needs a JVM kept running,
+unlike a static site), frontend on **Vercel**.
+
+Every screen is a fixed phone-width layout (per the design handoff's 390px
+frames), same as the native app — intended for mobile browsers, where it
+renders exactly like the app. On a wide desktop browser, `WebPhoneFrame`
+(`src/components/WebPhoneFrame.tsx`, mounted in `app/_layout.tsx`) centers
+that same layout in a fixed ~460px card on a neutral background above
+460px viewport width, instead of stretching it edge to edge. Native and
+narrow/mobile-web are unaffected — the wrapper is a pass-through below that
+width and on non-web platforms.
+
+**Backend (Railway)**
+1. [railway.app](https://railway.app) → New Project → Deploy from GitHub repo
+   → pick this repo, set **Root Directory** to `backend`. Railway detects
+   `backend/Dockerfile` and builds from that (multi-stage: Maven Wrapper
+   build, then a slim JRE runtime — same build the local `run-local`
+   scripts use, just containerized).
+2. Set these environment variables on the Railway service:
+   - `DB_URL`, `DB_USER`, `DB_PASSWORD` — same Supabase **Session pooler**
+     values as your local `.env`. (Railway has ordinary outbound internet
+     access, unlike this dev sandbox or a locked-down office network — this
+     is the first place this project's Supabase connection can actually be
+     verified end-to-end.)
+   - `JWT_SECRET` — generate a real random 32+ byte value; **do not** reuse
+     the `dev-only-...` default from `application.yml`, that one is public
+     (it's in this repo).
+   - `APP_CORS_ALLOWED_ORIGINS` — leave unset until you have the Vercel URL
+     from the next section, then set it to that exact origin (e.g.
+     `https://saju-xyz.vercel.app`, comma-separate for more than one) and
+     redeploy. Until then it defaults to `localhost:*` only, so the deployed
+     frontend's requests will be CORS-blocked.
+3. Railway assigns a public URL (Settings → Networking → Generate Domain).
+   That's your backend URL for the next step.
+
+> **Not verified end-to-end**: this sandbox can't run a Docker daemon
+> (container-in-container is blocked), so the Dockerfile itself was reviewed
+> carefully but never actually built here. Everything it does (Maven Wrapper
+> build, package, run the jar) is the same sequence already verified working
+> outside Docker this session — but do watch the first Railway build log for
+> a real confirmation.
+
+**Frontend (Vercel)**
+1. [vercel.com](https://vercel.com) → New Project → same GitHub repo, set
+   **Root Directory** to `mobile`. `mobile/vercel.json` already has the
+   build command (`npx expo export --platform web`), output directory
+   (`dist`), and the SPA rewrite (expo-router does client-side routing, so
+   every path needs to serve `index.html` or a reload on e.g. `/family`
+   404s).
+2. Add environment variable `EXPO_PUBLIC_API_BASE_URL` = your Railway
+   backend URL from above. Expo inlines `EXPO_PUBLIC_*` vars into the
+   bundle at build time (`src/api/client.ts`), so this is the only wiring
+   needed — no other code change per environment.
+3. Deploy. Then go back and set `APP_CORS_ALLOWED_ORIGINS` on Railway to
+   this Vercel URL and redeploy the backend.
+
+**On purpose, for this pass**: only guest sign-in ("먼저 둘러보기") works on
+the web deployment. Kakao/Apple login is a genuinely different integration
+on web (OAuth redirect / their JS SDKs) from the native-SDK path the buttons
+already call into — not just "the same thing, unwired," a separate piece of
+work. Fine for a demo/promo link; flag before this goes out under a real
+domain expecting real sign-ups.
+
 ## What's actually been run, not just compiled
 
 Type-checking and a Metro bundle pass both stay silent on real bugs (wrong
@@ -158,22 +224,25 @@ confirms immediately and the slow write finishes in the background.
   handoff's rule ①) but shouldn't be presented as a canonical formula.
 - **Pretendard isn't bundled** (no Google Fonts distribution); UI falls back
   to the platform system sans. Noto Serif KR is loaded for headlines.
-- **`expo-sqlite`'s web backend doesn't reliably load in this dev sandbox**
-  (its web worker bundle sometimes fails/is slow to come up) — this
-  originally surfaced as calls hanging forever, then as a real data-loss
-  bug (a write that silently timed out looked like it succeeded to the
-  screen that made it, but a different screen's fresh read saw nothing).
-  `state/storage.ts` now keeps an in-memory layer that's the actual source
-  of truth for the running session — every write commits there immediately
-  and is consistent for any reader in the same session regardless of the
-  underlying store's health, with the timeout-guarded kv-store call behind
-  it as best-effort cross-restart persistence. Native (iOS/Android) uses
-  `expo-sqlite`'s real SQLite backend, which doesn't have this problem, but
-  the in-memory layer is a genuine improvement there too (faster reads, and
-  cheap insurance against the same class of bug should the store ever be
-  slow for any other reason). Cross-*restart* persistence on web specifically
-  is still not verified reliable — worth a second look if web is ever a
-  real target, not just a dev convenience.
+- **`expo-sqlite`'s web backend's actual root cause found and fixed**: its
+  web worker imports a `.wasm` file that Metro doesn't know how to bundle by
+  default, so `expo start --web` served a broken chunk (falling back to
+  `storage.ts`'s in-memory layer, below) and `expo export --platform web`
+  — a static build, needed for the Vercel deployment — failed outright.
+  `metro.config.js` now registers `wasm` as an asset extension, which fixes
+  both. Kept the in-memory layer regardless — it's genuine insurance (faster
+  reads, safe against *any* slow/unavailable store, not just this one bug)
+  and is what makes the UI-blocking-on-storage bug below possible to spot
+  and fix. Cross-*restart* persistence on web specifically is still not
+  separately verified reliable.
+- Before the fix above, `state/storage.ts`'s in-memory layer was the load-bearing
+  workaround: every write commits there immediately and is consistent for any
+  reader in the same session regardless of the underlying store's health,
+  with the timeout-guarded kv-store call behind it as best-effort
+  cross-restart persistence. Native (iOS/Android) uses `expo-sqlite`'s real
+  SQLite backend, which never had this specific bug, but the in-memory layer
+  is a genuine improvement there too (faster reads, cheap insurance against
+  the same class of bug should the store ever be slow for any other reason).
 - **One chart per user** on the backend. Family groups (07) are a thin
   layer on top: `FamilyGroup`/`FamilyMember`/`FamilyInvite` (6-digit codes,
   24h TTL) let up to 5 signed-in users see each other's day score — computed
