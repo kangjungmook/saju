@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTheme } from '../src/theme/ThemeProvider';
+import { ScreenHeader } from '../src/components/ScreenHeader';
 import { fonts, space } from '../src/theme/tokens';
 import { Button } from '../src/components/Button';
 import { useChart } from '../src/state/ChartContext';
@@ -74,13 +75,7 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={[styles.fill, { backgroundColor: colors.bg }]} edges={['top']}>
-      <View style={styles.navRow}>
-        <Pressable accessibilityLabel="뒤로" onPress={() => router.back()} style={styles.navBtn}>
-          <Text style={{ fontSize: 20, color: colors.ink }}>‹</Text>
-        </Pressable>
-        <Text style={{ fontSize: 14, fontWeight: '600', color: colors.ink }}>알림</Text>
-        <View style={styles.navBtn} />
-      </View>
+      <ScreenHeader title="알림" />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {perm !== 'granted' && (
@@ -132,8 +127,6 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  navRow: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.sm },
-  navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   scroll: { paddingHorizontal: space.lg, paddingBottom: space.xl },
   permCard: { marginTop: space.sm, padding: space.lg, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, gap: space.md },
   permRow: { flexDirection: 'row', gap: space.sm, marginTop: space.xs },

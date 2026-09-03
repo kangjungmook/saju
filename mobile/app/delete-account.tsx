@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTheme } from '../src/theme/ThemeProvider';
+import { ScreenHeader } from '../src/components/ScreenHeader';
 import { fonts, space } from '../src/theme/tokens';
 import { Button } from '../src/components/Button';
 import { useAuth } from '../src/state/AuthContext';
@@ -31,11 +32,7 @@ export default function DeleteAccountScreen() {
 
   return (
     <SafeAreaView style={[styles.fill, { backgroundColor: colors.surface }]} edges={['top']}>
-      <View style={styles.navRow}>
-        <Pressable accessibilityLabel="설정으로 돌아가기" onPress={() => router.back()} style={styles.navBtn}>
-          <Text style={{ fontSize: 20, color: colors.ink }}>‹</Text>
-        </Pressable>
-      </View>
+      <ScreenHeader backLabel="설정으로 돌아가기" />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={[styles.title, { color: colors.ink, fontFamily: fonts.serif }]}>탈퇴하면{'\n'}다시 되돌릴 수 없어요</Text>
@@ -75,8 +72,6 @@ export default function DeleteAccountScreen() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  navRow: { height: 52, justifyContent: 'center', paddingHorizontal: space.base },
-  navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   scroll: { paddingHorizontal: space.lg },
   title: { fontSize: 26, fontWeight: '600', lineHeight: 34 },
   deletedCol: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: space.lg, gap: space.base },

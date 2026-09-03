@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../src/theme/ThemeProvider';
+import { ScreenHeader } from '../src/components/ScreenHeader';
 import { bandFromScore, fonts, space } from '../src/theme/tokens';
 import { useChart } from '../src/state/ChartContext';
 import { currentAge, monthScore, yearGanZhiHanja } from '../src/lib/bazi/derived';
@@ -32,13 +33,20 @@ export default function YearViewScreen() {
 
   return (
     <SafeAreaView style={[styles.fill, { backgroundColor: colors.bg }]} edges={['top']}>
-      <View style={styles.navRow}>
-        <Pressable accessibilityLabel="이전 해" onPress={() => setYear((y) => y - 1)} style={styles.navBtn}>
-          <Text style={{ fontSize: 17, color: colors.ink }}>‹</Text>
+      <ScreenHeader title="연간 흐름" backLabel="캘린더로 돌아가기" />
+
+      {/* The year stepper used to *be* the header, which meant this screen's
+          only top-left control was a `‹` that changed the year instead of
+          going back — the one screen with no exit had a button that looked
+          like one. It's its own row now, with the arrows clearly paired to
+          the year between them. */}
+      <View style={styles.yearRow}>
+        <Pressable accessibilityLabel={`${year - 1}년 보기`} onPress={() => setYear((y) => y - 1)} style={styles.navBtn}>
+          <Text style={{ fontSize: 17, color: colors.ink2 }}>‹</Text>
         </Pressable>
-        <Text style={{ fontSize: 14, fontWeight: '600', color: colors.ink }}>{year}년 · {yearGanZhiHanja(year)}</Text>
-        <Pressable accessibilityLabel="다음 해" onPress={() => setYear((y) => y + 1)} style={styles.navBtn}>
-          <Text style={{ fontSize: 17, color: colors.ink3 }}>›</Text>
+        <Text style={{ fontSize: 15, fontWeight: '600', color: colors.ink }}>{year}년 · {yearGanZhiHanja(year)}</Text>
+        <Pressable accessibilityLabel={`${year + 1}년 보기`} onPress={() => setYear((y) => y + 1)} style={styles.navBtn}>
+          <Text style={{ fontSize: 17, color: colors.ink2 }}>›</Text>
         </Pressable>
       </View>
 
@@ -90,7 +98,7 @@ function SummaryRow({ colors, label, value, last }: { colors: any; label: string
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  navRow: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.sm },
+  yearRow: { height: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.md },
   navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   scroll: { paddingHorizontal: space.lg, paddingTop: space.sm, paddingBottom: space.xl },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },

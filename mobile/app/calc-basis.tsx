@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTheme } from '../src/theme/ThemeProvider';
+import { ScreenHeader } from '../src/components/ScreenHeader';
 import { fonts, space } from '../src/theme/tokens';
 
 const SECTIONS = [
@@ -32,13 +33,7 @@ export default function CalcBasisScreen() {
   const { colors } = useTheme();
   return (
     <SafeAreaView style={[styles.fill, { backgroundColor: colors.bg }]} edges={['top']}>
-      <View style={styles.navRow}>
-        <Pressable accessibilityLabel="뒤로" onPress={() => router.back()} style={styles.navBtn}>
-          <Text style={{ fontSize: 20, color: colors.ink }}>‹</Text>
-        </Pressable>
-        <Text style={{ fontSize: 14, fontWeight: '600', color: colors.ink }}>사주 계산 기준</Text>
-        <View style={styles.navBtn} />
-      </View>
+      <ScreenHeader title="사주 계산 기준" />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={[styles.title, { color: colors.ink, fontFamily: fonts.serif }]}>어떻게 계산하나요</Text>
         <Text style={{ fontSize: 13.5, lineHeight: 24, color: colors.ink2, marginTop: space.base, marginBottom: space.xl }}>
@@ -57,8 +52,6 @@ export default function CalcBasisScreen() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  navRow: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.sm },
-  navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   scroll: { paddingHorizontal: space.lg, paddingBottom: space.xl },
   title: { fontSize: 26, fontWeight: '600' },
   section: { paddingTop: space.lg, marginTop: space.lg, borderTopWidth: StyleSheet.hairlineWidth },

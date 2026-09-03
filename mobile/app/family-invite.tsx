@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useTheme } from '../src/theme/ThemeProvider';
+import { ScreenHeader } from '../src/components/ScreenHeader';
 import { fonts, space } from '../src/theme/tokens';
 import { Button } from '../src/components/Button';
 import { useAuth } from '../src/state/AuthContext';
@@ -48,11 +49,7 @@ export default function FamilyInviteScreen() {
 
   return (
     <SafeAreaView style={[styles.fill, { backgroundColor: colors.surface }]} edges={['top']}>
-      <View style={styles.navRow}>
-        <Pressable accessibilityLabel="가족 그룹으로 돌아가기" onPress={() => router.back()} style={styles.navBtn}>
-          <Text style={{ fontSize: 20, color: colors.ink }}>‹</Text>
-        </Pressable>
-      </View>
+      <ScreenHeader backLabel="가족 그룹으로 돌아가기" />
 
       <View style={styles.body}>
         <View style={{ paddingHorizontal: space.base }}>
@@ -103,8 +100,6 @@ export default function FamilyInviteScreen() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  navRow: { height: 52, justifyContent: 'center', paddingHorizontal: space.base },
-  navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   body: { flex: 1, justifyContent: 'space-between' },
   title: { fontSize: 28, fontWeight: '600' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: space.lg },

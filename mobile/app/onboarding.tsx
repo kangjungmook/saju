@@ -226,7 +226,10 @@ function Toggle({ label, active, onPress }: { label: string; active: boolean; on
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  navRow: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.lg },
+  // Keeps its own row rather than ScreenHeader — the centre slot here is a
+  // step indicator, not a title — but matches the shared header's 8px padding
+  // so the back arrow doesn't jump when you move between screens.
+  navRow: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.sm },
   navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   dots: { flexDirection: 'row', gap: 6, alignItems: 'center' },
   dot: { width: 20, height: 3, borderRadius: 2 },

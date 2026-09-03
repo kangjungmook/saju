@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTheme } from '../src/theme/ThemeProvider';
+import { ScreenHeader } from '../src/components/ScreenHeader';
 import { fonts, space } from '../src/theme/tokens';
 import { Button } from '../src/components/Button';
 import { SelectField } from '../src/components/SelectField';
@@ -66,11 +67,7 @@ export default function RelationsScreen() {
 
   return (
     <SafeAreaView style={[styles.fill, { backgroundColor: colors.bg }]} edges={['top']}>
-      <View style={styles.navRow}>
-        <Pressable accessibilityLabel="캘린더로 돌아가기" onPress={() => router.back()} style={styles.navBtn}>
-          <Text style={{ fontSize: 20, color: colors.ink }}>‹</Text>
-        </Pressable>
-      </View>
+      <ScreenHeader backLabel="캘린더로 돌아가기" />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.headRow}>
@@ -178,8 +175,6 @@ export default function RelationsScreen() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  navRow: { height: 52, justifyContent: 'center', paddingHorizontal: space.base },
-  navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   scroll: { paddingHorizontal: space.lg, paddingBottom: space.xl },
   headRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   title: { fontSize: 28, fontWeight: '600' },

@@ -3,6 +3,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../src/theme/ThemeProvider';
+import { ScreenHeader } from '../src/components/ScreenHeader';
 import { fonts, space } from '../src/theme/tokens';
 import { Button } from '../src/components/Button';
 import { useChart } from '../src/state/ChartContext';
@@ -48,13 +49,7 @@ export default function CompatibilityScreen() {
 
   return (
     <SafeAreaView style={[styles.fill, { backgroundColor: colors.bg }]} edges={['top']}>
-      <View style={styles.navRow}>
-        <Pressable accessibilityLabel="뒤로" onPress={() => router.back()} style={styles.navBtn}>
-          <Text style={{ fontSize: 20, color: colors.ink }}>‹</Text>
-        </Pressable>
-        <Text style={{ fontSize: 14, fontWeight: '600', color: colors.ink }}>궁합</Text>
-        <View style={styles.navBtn} />
-      </View>
+      <ScreenHeader title="궁합" backLabel="관계로 돌아가기" />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.heroCol}>
@@ -120,8 +115,6 @@ export default function CompatibilityScreen() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  navRow: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.sm },
-  navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   scroll: { paddingHorizontal: space.lg, paddingBottom: space.xl },
   heroCol: { alignItems: 'center', gap: space.md, paddingTop: space.base, paddingBottom: space.sm },
   avatarStack: { flexDirection: 'row', alignItems: 'center' },

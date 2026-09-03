@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import { fonts, space, bandFromScore, dark } from '../src/theme/tokens';
+import { ScreenHeader } from '../src/components/ScreenHeader';
 import { useChart } from '../src/state/ChartContext';
 import { dailyScoresForMonth, monthlyElementMood, monthlyHeadline } from '../src/lib/bazi/derived';
 import { getDayLog } from '../src/state/logs';
@@ -60,11 +61,7 @@ export default function MonthReportScreen() {
 
   return (
     <SafeAreaView style={[styles.fill, { backgroundColor: DARK.bg }]} edges={['top']}>
-      <View style={styles.navRow}>
-        <Pressable accessibilityLabel="닫기" onPress={() => router.back()} style={styles.navBtn}>
-          <Text style={{ fontSize: 17, color: DARK.ink }}>✕</Text>
-        </Pressable>
-      </View>
+      <ScreenHeader variant="close" backLabel="닫기" tint={{ ink: DARK.ink, ink2: DARK.ink2 }} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={{ fontSize: 11, letterSpacing: 2, color: DARK.ink3, marginBottom: space.lg }}>
@@ -121,8 +118,6 @@ function StatRow({ label, value, last, small }: { label: string; value: string; 
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  navRow: { height: 52, alignItems: 'center', justifyContent: 'center' },
-  navBtn: { position: 'absolute', left: space.sm, width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   scroll: { paddingHorizontal: space.xl, paddingBottom: space.xl },
   title: { fontSize: 30, fontWeight: '600', lineHeight: 40 },
   statCol: { marginTop: space.xl, borderTopWidth: StyleSheet.hairlineWidth },

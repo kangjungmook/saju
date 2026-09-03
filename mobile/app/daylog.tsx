@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTheme } from '../src/theme/ThemeProvider';
+import { ScreenHeader } from '../src/components/ScreenHeader';
 import { fonts, space, minTouchTarget } from '../src/theme/tokens';
 import { Button } from '../src/components/Button';
 import { Toast } from '../src/components/Toast';
@@ -128,11 +129,7 @@ export default function DayLogScreen() {
         style={styles.fill}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.navRow}>
-          <Pressable accessibilityLabel="캘린더로 돌아가기" onPress={() => router.back()} style={styles.navBtn}>
-            <Text style={{ fontSize: 20, color: colors.ink }}>‹</Text>
-          </Pressable>
-        </View>
+        <ScreenHeader backLabel="캘린더로 돌아가기" />
 
         <ScrollView
           ref={scrollRef}
@@ -305,8 +302,6 @@ export default function DayLogScreen() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  navRow: { height: 52, justifyContent: 'center', paddingHorizontal: space.base },
-  navBtn: { width: minTouchTarget, height: minTouchTarget, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   scroll: { paddingHorizontal: space.lg, paddingBottom: space.lg },
   title: { fontSize: 30, fontWeight: '600', lineHeight: 38 },
   sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: space.md },

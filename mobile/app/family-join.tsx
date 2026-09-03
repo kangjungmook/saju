@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTheme } from '../src/theme/ThemeProvider';
+import { ScreenHeader } from '../src/components/ScreenHeader';
 import { fonts, space } from '../src/theme/tokens';
 import { Button } from '../src/components/Button';
 import { useAuth } from '../src/state/AuthContext';
@@ -56,11 +57,7 @@ export default function FamilyJoinScreen() {
 
   return (
     <SafeAreaView style={[styles.fill, { backgroundColor: colors.surface }]} edges={['top']}>
-      <View style={styles.navRow}>
-        <Pressable accessibilityLabel="가족 그룹으로 돌아가기" onPress={() => router.back()} style={styles.navBtn}>
-          <Text style={{ fontSize: 20, color: colors.ink }}>‹</Text>
-        </Pressable>
-      </View>
+      <ScreenHeader backLabel="가족 그룹으로 돌아가기" />
 
       <View style={styles.scroll}>
         <Text style={[styles.title, { color: colors.ink, fontFamily: fonts.serif }]}>받은 코드를{'\n'}넣어주세요</Text>
@@ -140,8 +137,6 @@ export default function FamilyJoinScreen() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  navRow: { height: 52, justifyContent: 'center', paddingHorizontal: space.base },
-  navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   scroll: { flex: 1, paddingHorizontal: space.lg, paddingBottom: space.base },
   title: { fontSize: 28, fontWeight: '600', lineHeight: 36 },
   codeWrap: { flexDirection: 'row', gap: space.xs, justifyContent: 'center', marginTop: space.xl },

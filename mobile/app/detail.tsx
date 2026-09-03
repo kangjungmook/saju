@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import { useTheme } from '../src/theme/ThemeProvider';
+import { ScreenHeader } from '../src/components/ScreenHeader';
 import { fonts, space } from '../src/theme/tokens';
 import { Button } from '../src/components/Button';
 import { useChart } from '../src/state/ChartContext';
@@ -70,15 +71,15 @@ export default function DetailScreen() {
 
   return (
     <SafeAreaView style={[styles.fill, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
-      <View style={styles.navRow}>
-        <Pressable accessibilityLabel="캘린더로 돌아가기" onPress={() => router.back()} style={styles.navBtn}>
-          <Text style={{ fontSize: 20, color: colors.ink }}>‹</Text>
-        </Pressable>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: colors.ink2 }}>{m}월 {d}일</Text>
-        <Pressable accessibilityLabel="저장" onPress={() => {}} style={styles.saveBtn}>
-          <Text style={{ fontSize: 12.5, fontWeight: '600', color: colors.ink2 }}>저장</Text>
-        </Pressable>
-      </View>
+      <ScreenHeader
+        title={`${m}월 ${d}일`}
+        backLabel="캘린더로 돌아가기"
+        right={
+          <Pressable accessibilityLabel="저장" onPress={() => {}} style={styles.saveBtn}>
+            <Text style={{ fontSize: 12.5, fontWeight: '600', color: colors.ink2 }}>저장</Text>
+          </Pressable>
+        }
+      />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.heroBlock}>
@@ -259,8 +260,6 @@ function Section({
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  navRow: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.base },
-  navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   saveBtn: { height: 44, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   scroll: { paddingHorizontal: space.lg, paddingBottom: space.xl },
   heroBlock: { paddingVertical: space.md },

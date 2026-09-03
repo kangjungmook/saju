@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { useTheme } from '../src/theme/ThemeProvider';
 import { fonts, space } from '../src/theme/tokens';
 import { Button } from '../src/components/Button';
+import { ScreenHeader } from '../src/components/ScreenHeader';
 import { useChart } from '../src/state/ChartContext';
 import { HANGAN, HANZHI, ganIndexOf, zhiIndexOf } from '../src/lib/bazi/ganzhi';
 import { birthCaption, dayMasterHeadline, dayMasterStrength, elementDistributionSummary, ELEMENT_INFO } from '../src/lib/bazi/derived';
@@ -28,11 +29,16 @@ export default function MySajuScreen() {
 
   return (
     <SafeAreaView style={[styles.fill, { backgroundColor: colors.surface }]} edges={['top']}>
-      <View style={styles.navRow}>
-        <Pressable accessibilityLabel="설정" onPress={() => router.push('/settings')} style={styles.settingsBtn}>
-          <Text style={{ fontSize: 18, color: colors.ink2 }}>⚙</Text>
-        </Pressable>
-      </View>
+      <ScreenHeader
+        title="내 사주"
+        backLabel="캘린더로 돌아가기"
+        onBack={() => router.replace('/home')}
+        right={
+          <Pressable accessibilityLabel="설정" onPress={() => router.push('/settings')} style={styles.settingsBtn}>
+            <Text style={{ fontSize: 18, color: colors.ink2 }}>⚙</Text>
+          </Pressable>
+        }
+      />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={{ paddingTop: space.xs, paddingBottom: space.lg }}>
           <Text style={{ fontSize: 12, letterSpacing: 0.5, color: colors.ink3, marginBottom: space.xs }}>{birthCaption(chart)}</Text>
@@ -155,7 +161,6 @@ export default function MySajuScreen() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  navRow: { height: 52, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: space.base },
   settingsBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   scroll: { paddingHorizontal: space.lg, paddingBottom: space.xl },
   headline: { fontSize: 28, fontWeight: '600', lineHeight: 36, marginTop: space.xs },

@@ -3,6 +3,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTheme, ThemeMode, THEME_MODE_LABELS } from '../src/theme/ThemeProvider';
+import { ScreenHeader } from '../src/components/ScreenHeader';
 import { fonts, space, minTouchTarget } from '../src/theme/tokens';
 import { useAuth } from '../src/state/AuthContext';
 import { useChart } from '../src/state/ChartContext';
@@ -54,11 +55,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={[styles.fill, { backgroundColor: colors.surface }]} edges={['top']}>
-      <View style={styles.navRow}>
-        <Pressable accessibilityLabel="캘린더로 돌아가기" onPress={() => router.back()} style={styles.navBtn}>
-          <Text style={{ fontSize: 20, color: colors.ink }}>‹</Text>
-        </Pressable>
-      </View>
+      <ScreenHeader backLabel="캘린더로 돌아가기" />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={[styles.title, { color: colors.ink, fontFamily: fonts.serif }]}>설정</Text>
@@ -170,8 +167,6 @@ function Row({
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  navRow: { height: 52, justifyContent: 'center', paddingHorizontal: space.base },
-  navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   scroll: { paddingHorizontal: space.lg, paddingBottom: space.xl },
   title: { fontSize: 28, fontWeight: '600', paddingVertical: space.sm, marginBottom: space.base },
   segmentRow: { flexDirection: 'row', gap: space.sm, paddingTop: space.xs },
