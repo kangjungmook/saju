@@ -24,7 +24,9 @@ import { Chart } from '../types/domain';
  */
 const COMPACT_SCALE = 0.88;
 const CALENDAR_ICON = 'M4 7.5a2 2 0 012-2h12a2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2zM4 10.5h16M8 4v3M16 4v3';
-const MENU_ICON = 'M4 6h16M4 12h16M4 18h10';
+// An open book — 03's top bar already uses the four-pane grid for 연간 뷰, and
+// two destinations must not share a glyph.
+const EXPLORE_ICON = 'M12 6.5v13M12 6.5C10.8 5.6 9 5 6.5 5H4v12.5h2.5c2.5 0 4.3.6 5.5 1.5M12 6.5c1.2-.9 3-1.5 5.5-1.5H20v12.5h-2.5c-2.5 0-4.3.6-5.5 1.5';
 const LOG_ICON = 'M6 4h9l4 4v12H6zM9 12h7M9 16h5M15 4v4h4';
 const RELATIONS_ICON = 'M9.5 6.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM15.5 6.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11z';
 const SCROLL_DELTA = 12; // ignore jitter; only a deliberate drag moves the bar
@@ -56,7 +58,7 @@ export function useTabBarScroll(): { collapsed: boolean } & TabBarScrollState {
   };
 }
 
-export type TabId = 'calendar' | 'menu' | 'daylog' | 'relations' | 'mysaju';
+export type TabId = 'calendar' | 'explore' | 'daylog' | 'relations' | 'mysaju';
 
 export function TabBar({
   chart,
@@ -159,15 +161,15 @@ export function TabBar({
           />
 
           {/* Was a 문답 stub whose only behaviour was a "준비 중" alert. 10·18
-              still need an LLM key, so the slot now holds the 전체 map instead
-              of a button that does nothing. */}
+              still need an LLM key, so the slot holds 풀이 — the deeper-reading
+              surface — instead of a button that does nothing. */}
           <Tab
             colors={colors}
             isDark={isDark}
-            label="전체"
-            active={active === 'menu'}
-            iconPath={MENU_ICON}
-            onPress={() => router.replace('/menu')}
+            label="풀이"
+            active={active === 'explore'}
+            iconPath={EXPLORE_ICON}
+            onPress={() => router.replace('/explore')}
           />
 
           <Tab

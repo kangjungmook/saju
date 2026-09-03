@@ -1,7 +1,7 @@
 import { Chart, DayScore, Element, GanZhi, TenGodName, Zhi } from '../../types/domain';
 import { GAN_ELEMENT, HANGAN, HANZHI, ZHI_ELEMENT, ganIndexOf, monthPillar, relateElements, yearPillar, zhiIndexOf } from './ganzhi';
 import { kstToAbsoluteJDE } from './time';
-import { computeDayScore } from './dayScore';
+import { computeDayScore, chartSeed } from './dayScore';
 
 const RELATION_WEIGHT: Record<ReturnType<typeof relateElements>, number> = {
   producedBy: 13,
@@ -23,6 +23,12 @@ function seededUnit(key: string): number {
   return (h >>> 0) / 4294967296;
 }
 
+/**
+ * 세운·대운·월 scores share the day model's shape. They also share its seed:
+ * these used to hang off `chart.id` even after `computeDayScore` moved to the
+ * birth details, so the same person on a second device would see matching day
+ * scores but different year and month ones.
+ */
 function scoreForPillar(chart: Chart, gz: GanZhi, seedKey: string): number {
   const dayMasterElement = GAN_ELEMENT[ganIndexOf(chart.dayMaster)];
   const rel = relateElements(gz.element, dayMasterElement);
@@ -39,7 +45,7 @@ export function computeSeunSeries(chart: Chart, centerYear: number, span = 13): 
     const year = centerYear - half + i;
     const sample = { year, month: 7, day: 1, hour: 0, minute: 0 }; // mid-year sample within that 입춘-year
     const { pillar } = yearPillar(sample, kstToAbsoluteJDE(sample));
-    return { year, score: scoreForPillar(chart, pillar, `${chart.id}:seun:${year}`) };
+    return { year, score: scoreForPillar(chart, pillar, `${chartSeed(chart)}:seun:${year}`) };
   });
 }
 
@@ -48,7 +54,7 @@ export function computeDaeunSeries(chart: Chart): { startAge: number; endAge: nu
   return chart.luckCycles.map((c) => ({
     startAge: c.startAge,
     endAge: c.endAge,
-    score: scoreForPillar(chart, c.pillar, `${chart.id}:daeun:${c.index}`),
+    score: scoreForPillar(chart, c.pillar, `${chartSeed(chart)}:daeun:${c.index}`),
   }));
 }
 
@@ -222,7 +228,7 @@ export function calendarMonthPillar(year: number, month: number): GanZhi {
 
 export function monthScore(chart: Chart, year: number, month: number): number {
   const pillar = calendarMonthPillar(year, month);
-  return scoreForPillar(chart, pillar, `${chart.id}:month:${year}-${month}`);
+  return scoreForPillar(chart, pillar, `${chartSeed(chart)}:month:${year}-${month}`);
 }
 
 export function currentAge(birthISO: string): number {
