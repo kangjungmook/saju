@@ -11,6 +11,8 @@ interface ChartContextValue {
   chart: Chart | null;
   loading: boolean;
   createChart: (input: BirthInput, userId?: string) => Promise<Chart>;
+  /** 20 프로필 편집: recompute from edited birth details, keeping the same chart id. */
+  updateChart: (input: BirthInput) => Promise<Chart>;
   clearChart: () => Promise<void>;
 }
 
@@ -56,13 +58,40 @@ export function ChartProvider({ children }: { children: React.ReactNode }) {
     [token],
   );
 
+  /**
+   * Recomputes the chart from edited birth details **without minting a new id**.
+   *
+   * That matters more than it looks. Day logs are stored under
+   * `log:${chart.id}:${date}` (state/logs.ts) and scores under
+   * `score:${chart.id}:${date}`, so handing 20 프로필 편집 a fresh id would
+   * orphan every log the user has written — while the handoff's note for
+   * 09·20 requires the opposite: "지난 기록과 문답은 유지하고, 과거 점수는 새
+   * 산식으로 다시 매깁니다". Keeping the id preserves the logs; the score
+   * cache re-keys itself anyway because the stored `scoreVersion` no longer
+   * matches (state/scores.ts), so past days get re-scored on read.
+   */
+  const updateChart = useCallback(
+    async (input: BirthInput) => {
+      if (!chart) throw new Error('updateChart called with no chart loaded');
+      const next = computeChart(chart.userId, chart.id, input);
+      setChart(next);
+      const localSave = setJSON(CHART_KEY, next);
+      if (token) {
+        saveChartRemote(token, next).catch((e) => console.warn('[chart] backend sync failed, kept locally:', e));
+      }
+      await localSave;
+      return next;
+    },
+    [chart, token],
+  );
+
   const clearChart = useCallback(async () => {
     setChart(null);
     await setJSON(CHART_KEY, null);
   }, []);
 
   return (
-    <ChartContext.Provider value={{ chart, loading, createChart, clearChart }}>{children}</ChartContext.Provider>
+    <ChartContext.Provider value={{ chart, loading, createChart, updateChart, clearChart }}>{children}</ChartContext.Provider>
   );
 }
 

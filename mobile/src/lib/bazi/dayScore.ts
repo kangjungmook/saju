@@ -18,8 +18,30 @@ const RELATION_WEIGHT: Record<ReturnType<typeof relateElements>, number> = {
   controlledBy: -10, // day's element pressures the day master (官殺) — friction
 };
 
+/**
+ * What the day-texture is seeded on.
+ *
+ * This used to be `chart.id`, which ChartContext builds as
+ * `${userId}-${Date.now()}` — so recomputing a chart from *identical* birth
+ * details produced a different id and therefore a different score for every
+ * past and future day. That breaks the handoff's first rule (§1 ①, "같은 입력
+ * = 같은 결과") outright, and it was about to become visible: 20 프로필 편집
+ * recomputes the chart on save, so opening it and saving without changing
+ * anything would silently reshuffle every score in the app. 27 체감 보정 would
+ * then be calibrating against a moving baseline, and 12's stored
+ * `predictedRaw` would no longer match what the day now claims to score.
+ *
+ * The birth details *are* the input, so they are what the texture hangs on.
+ * Two people born at the same minute in the same place do get the same chart —
+ * that is what 사주 means, not a collision to design around.
+ */
+export function chartSeed(chart: Chart): string {
+  const b = chart.birth;
+  return [b.date, b.time ?? '-', b.calendar, b.region, chart.gender, chart.hasHour ? 'h' : '-'].join('|');
+}
+
 function seededUnit(key: string): number {
-  // xmur3-style string hash -> mulberry32, so the same (chartId, date) always yields the same texture.
+  // xmur3-style string hash -> mulberry32, so the same (seed, date) always yields the same texture.
   let h = 1779033703 ^ key.length;
   for (let i = 0; i < key.length; i++) {
     h = Math.imul(h ^ key.charCodeAt(i), 3432918353);
@@ -43,7 +65,10 @@ function ganZhiLabel(gz: GanZhi): string {
   return `${gz.gan}${gz.zhi}`;
 }
 
-export function computeDayScore(chart: Chart, dateISO: string, scoreVersion = 'bazi-engine-v1'): DayScore {
+// v2: the texture seed moved off the mutable chart id onto the birth details
+// (see chartSeed). Bumping the version invalidates every cached score written
+// under v1, which is required — the same day genuinely scores differently now.
+export function computeDayScore(chart: Chart, dateISO: string, scoreVersion = 'bazi-engine-v2'): DayScore {
   const [y, m, d] = dateISO.split('-').map(Number);
   const jdn = toJDN(y, m, d);
   const dayGZ = dayPillarFromJDN(jdn);
@@ -56,7 +81,7 @@ export function computeDayScore(chart: Chart, dateISO: string, scoreVersion = 'b
   const scarcity = 1 - (chart.elements[dayGZ.element] ?? 0) / 100; // 0 (abundant) .. ~0.9 (absent)
   const magnitude = RELATION_WEIGHT[rel] * (0.6 + 0.8 * scarcity);
 
-  const texture = (seededUnit(`${chart.id}:${dateISO}`) - 0.5) * 12; // deterministic +-6 texture
+  const texture = (seededUnit(`${chartSeed(chart)}:${dateISO}`) - 0.5) * 12; // deterministic +-6 texture
   const raw = Math.max(0, Math.min(100, Math.round(50 + magnitude + texture)));
   const band = raw < 35 ? 1 : raw < 50 ? 2 : raw < 65 ? 3 : raw < 80 ? 4 : 5;
 

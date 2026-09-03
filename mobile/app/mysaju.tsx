@@ -151,7 +151,7 @@ export default function MySajuScreen() {
         <Button
           label="생년월일시 다시 입력하기"
           variant="outline"
-          onPress={() => router.push('/onboarding')}
+          onPress={() => router.push('/profile-edit')}
         />
         <View style={{ height: 24 }} />
       </ScrollView>

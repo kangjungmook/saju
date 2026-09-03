@@ -10,6 +10,7 @@ import { getDayScore, getDayScoresRange } from '../src/state/scores';
 import { getLoggedDates, streakEndingAt } from '../src/state/logs';
 import { getRelations } from '../src/state/relations';
 import { hasUnreadNotifications } from '../src/state/notifications';
+import { getProfileName } from '../src/state/profile';
 import { Chart, DayScore, Relation } from '../src/types/domain';
 import { HANGAN, HANZHI, GAN_ELEMENT, ganIndexOf, zhiIndexOf } from '../src/lib/bazi/ganzhi';
 import { computeLuckyItems, currentAge, hourRangeLabel, monthlyHeadline, calendarMonthPillar, yearGanZhiHanja } from '../src/lib/bazi/derived';
@@ -66,6 +67,7 @@ export default function HomeScreen() {
   const [partner, setPartner] = useState<{ relation: Relation; chart: Chart } | null>(null);
   const tabScroll = useTabBarScroll();
   const blurTarget = useRef<View | null>(null);
+  const [name, setName] = useState('');
 
   useEffect(() => {
     if (!chartLoading && !chart) router.replace('/onboarding');
@@ -89,6 +91,7 @@ export default function HomeScreen() {
     useCallback(() => {
       if (!chart) return;
       hasUnreadNotifications(todayISO()).then(setUnread);
+      getProfileName().then(setName);
       getLoggedDates(chart).then((logged) => {
         setLoggedYesterday(logged.has(yesterdayISO()));
         // Ends at yesterday: today isn't over yet, so not having logged it
@@ -228,7 +231,9 @@ export default function HomeScreen() {
 
       <View style={styles.topBar}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 14.5, fontWeight: '600', color: colors.ink }}>{greetingFor(now.getHours())}</Text>
+          <Text style={{ fontSize: 14.5, fontWeight: '600', color: colors.ink }}>
+            {name ? `${name}님, ${greetingFor(now.getHours())}` : greetingFor(now.getHours())}
+          </Text>
           <Text style={{ fontSize: 11, color: colors.ink2, marginTop: 1 }}>{pillarLine}</Text>
         </View>
         <Pressable accessibilityLabel={unread ? '알림 — 읽지 않은 알림 있음' : '알림'} onPress={() => router.push('/notifications')} style={styles.topBtn}>

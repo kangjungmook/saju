@@ -146,3 +146,28 @@ describe('시진 spans (shared by 03 chips and 15 시간대별 흐름)', () => {
     expect(hourRangeLabel('자')).toBe('오후 11시–오전 1시'); // crosses midnight
   });
 });
+
+describe('score determinism across chart recomputation (handoff §1 rule ①)', () => {
+  const BIRTH = { date: '1997-03-21', time: '05:30', calendar: 'solar', region: '서울', gender: 'female' } as const;
+
+  it('gives identical scores when the same birth details are computed under a different chart id', () => {
+    // ChartContext mints ids as `${userId}-${Date.now()}`, so any recompute —
+    // 20 프로필 편집 saving, a reinstall, a guest session — yields a new id for
+    // unchanged input. The scores must not move with it.
+    const first = computeChart('u1', 'local-user-1700000000000', { ...BIRTH });
+    const again = computeChart('u1', 'local-user-1799999999999', { ...BIRTH });
+    expect(again.id).not.toBe(first.id);
+
+    for (const date of ['2026-01-01', '2026-09-03', '2027-06-15']) {
+      expect(computeDayScore(again, date).raw).toBe(computeDayScore(first, date).raw);
+    }
+  });
+
+  it('still separates people who were genuinely born differently', () => {
+    const a = computeChart('u1', 'c1', { ...BIRTH });
+    const b = computeChart('u2', 'c2', { ...BIRTH, date: '1997-03-22' });
+    const sameCount = ['2026-01-01', '2026-09-03', '2027-06-15']
+      .filter((d) => computeDayScore(a, d).raw === computeDayScore(b, d).raw).length;
+    expect(sameCount).toBeLessThan(3);
+  });
+});
