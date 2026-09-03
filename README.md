@@ -4,13 +4,17 @@ Implementation of the `사주 캘린더 앱.dc.html` design handoff. Built so fa
 
 - **진입/매일**: 01 로그인 → 02 정보 입력 → 16 계산 대기 → 03 홈·월간
   캘린더 → 04 상세
-- **이해**: 05 내 사주 원국 풀이, 23 연간 뷰
+- **이해**: 05 내 사주 원국 풀이, 15 시간대별 흐름, 23 연간 뷰
 - **재방문 고리**: 12 하루 기록, 13 월간 결산
+- **이 앱만의 축**: 25 지난 일 맞춰보기, 26 결정 저울, 27 체감 보정
 - **관계**: 19 관계 목록·추가, 11 궁합
-- **관리**: 09 설정 (+ 09-2 회원탈퇴), 17 알림함, 28 앱 정보 (+ 계산 기준
-  서브페이지)
+- **관리**: 09 설정 (+ 09-2 회원탈퇴), 20 내 정보 수정, 17 알림함, 28 앱 정보
+  (+ 계산 기준 서브페이지)
 - **가족**: 07 가족 그룹 홈(7-1) · 초대 코드 만들기(7-2) · 코드로 참여(7-3)
   · 구성원 상세
+- **24 다크 모드**: not a separate screen — a re-tuned palette (L lowered, C
+  kept) that every screen already renders in, plus the 시스템 설정 / 라이트 /
+  다크 switch in 09 설정 that the handoff's note for 24·28 asks for.
 - **상태 컴포넌트 (22)**: not a standalone screen — a reusable set
   (`EmptyState`, `ErrorCard`, `Toast`, `OfflineBanner`) wired into real
   places rather than left as fixtures: `relations.tsx`'s empty state,
@@ -18,11 +22,20 @@ Implementation of the `사주 캘린더 앱.dc.html` design handoff. Built so fa
   actual killed/restarted backend), `daylog.tsx`'s save toast (real undo —
   deletes the just-saved log), and a real-network-state offline banner
   (`expo-network`'s `useNetworkState`) mounted globally in `app/_layout.tsx`.
+- **Shared chrome**: `ScreenHeader` on every pushed screen, and the floating
+  물방울 tab bar (`TabBar`) with real glass (`expo-blur`) that shrinks on scroll.
 
-The floating tab bar's 문답 icon is still a stub (needs an LLM integration
-decision — see below). Not built yet: 구독/결제(08·21), 위젯(06), 다크모드
-전용 화면(24), 문답·궁합 연동 AI 화면(10·18·26), 지난 일 맞춰보기(25), 체감
-보정(27).
+Not built, each for a reason that isn't "ran out of time":
+
+- **08 구독/결제 · 21 구독 관리** need a real store account. Store IAP is the
+  only allowed payment path (handoff §4, 08·21) and there are no products to
+  buy against, so a paywall built now would be a mock of the one thing on
+  these screens that has to be real. 09's 구독 관리 row says 준비 중.
+- **06 위젯** is native work — WidgetKit / App Widget targets behind an Expo
+  config plugin — which can't be built or verified from this environment.
+- **10 오늘의 문답 · 18 지난 문답** need an LLM API key, and the handoff
+  requires the question context be injected server-side rather than assembled
+  on the client. The tab bar's 문답 icon says 준비 중 rather than pretending.
 
 - `mobile/` — React Native (Expo, TypeScript, Expo Router)
 - `backend/` — Java Spring Boot (PostgreSQL, JWT auth)
@@ -217,6 +230,13 @@ confirms immediately and the slow write finishes in the background.
   the overwhelming majority of dates, but not cross-checked against an
   authoritative source (e.g. KASI) for the rare edge case of a birth
   reported at the exact minute of a new moon.
+- **Day scores are seeded on the birth details, not the chart id.** They used
+  to hang off `chart.id` (`${userId}-${Date.now()}`), so recomputing a chart
+  from identical input produced different scores for every day — a direct
+  violation of handoff §1 rule ①. Fixed, `scoreVersion` bumped to v2, and two
+  regression tests cover it. 20 프로필 편집 recomputes in place (same id) so day
+  logs, which are keyed by chart id, survive an edit; the score cache folds the
+  birth-detail seed into its key so an edited chart still re-scores.
 - **Day-score formula (`src/lib/bazi/dayScore.ts`) is our own model**, built
   from elemental relation theory (生剋 cycles) — there's no single public
   "official" BaZi scoring algorithm, since traditional 사주 reading is
