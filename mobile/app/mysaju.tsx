@@ -122,7 +122,7 @@ export default function MySajuScreen() {
               <Text style={{ fontSize: 13, fontWeight: '600', color: colors.ink }}>일간 강약</Text>
               <Text style={{ fontSize: 12, color: colors.ink2 }}>{strength.label}</Text>
             </View>
-            <View style={styles.strengthTrack}>
+            <View style={[styles.strengthTrack, { backgroundColor: colors.score[2] }]}>
               <View
                 style={[
                   styles.strengthKnob,
@@ -170,7 +170,9 @@ const styles = StyleSheet.create({
   ohaengCol: { flex: 1, alignItems: 'center', gap: space.sm, height: '100%', justifyContent: 'flex-end' },
   sipsinRow: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
   sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: space.base },
-  strengthTrack: { height: 6, borderRadius: 3, backgroundColor: '#C9A7D2' },
+  // 05 draws this as a linear-gradient(s1 → s5); flattened to the ramp's midpoint
+  // since a 6px track doesn't justify pulling in a gradient renderer.
+  strengthTrack: { height: 6, borderRadius: 3 },
   strengthKnob: { position: 'absolute', top: -5, width: 16, height: 16, borderRadius: 8, borderWidth: 3, marginLeft: -8 },
   strengthLabels: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 10 },
 });

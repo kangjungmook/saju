@@ -17,17 +17,20 @@ interface Props extends Omit<PressableProps, 'style'> {
 export function Button({ label, variant = 'primary', height = 52, icon, loading, fullWidth = true, disabled, ...rest }: Props) {
   const { colors } = useTheme();
 
+  // Brand/auth button colors are fixed, not themed — 01 로그인 in the design
+  // spells them out: Apple oklch(0.22 0.012 265) on oklch(0.98 0.004 265),
+  // Kakao oklch(0.86 0.155 96) on oklch(0.28 0.030 80).
   const bg: Record<Variant, string> = {
     primary: colors.ink,
-    dark: '#22181A',
-    kakao: '#DCC24A',
+    dark: '#181B20',
+    kakao: '#EFD044',
     outline: 'transparent',
     ghost: 'transparent',
   };
   const fg: Record<Variant, string> = {
     primary: colors.surface,
-    dark: '#F7F3EE',
-    kakao: '#3A2B12',
+    dark: '#F7F8FB',
+    kakao: '#312718',
     outline: colors.ink2,
     ghost: colors.ink2,
   };

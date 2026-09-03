@@ -19,7 +19,9 @@ export function WebPhoneFrame({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <View style={[styles.outer, { backgroundColor: scheme === 'dark' ? '#151318' : '#E5E1DC', height }]}>
+    // The mat behind the phone frame — one step off `bg` in the same 265° family,
+    // light: oklch(0.938 0.008 265) (the design canvas's own body color).
+    <View style={[styles.outer, { backgroundColor: scheme === 'dark' ? '#0E1016' : '#E8EAF0', height }]}>
       <View style={[styles.frame, { backgroundColor: colors.bg, height: Math.min(height - 48, 900) }]}>
         {children}
       </View>

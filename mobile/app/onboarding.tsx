@@ -75,7 +75,7 @@ export default function OnboardingScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.badgeRow}>
-          <View style={[styles.providerDot, { backgroundColor: '#DCC24A' }]} />
+          <View style={[styles.providerDot, { backgroundColor: '#EFD044' }]} />
           <Text style={{ fontSize: 12, color: colors.ink3 }}>{connectedLine}</Text>
         </View>
         <Text style={[styles.headline, { color: colors.ink, fontFamily: fonts.serif }]}>태어난 순간을{'\n'}알려주세요</Text>

@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
-import { fonts, space, bandFromScore } from '../src/theme/tokens';
+import { fonts, space, bandFromScore, dark } from '../src/theme/tokens';
 import { useChart } from '../src/state/ChartContext';
 import { dailyScoresForMonth, monthlyElementMood, monthlyHeadline } from '../src/lib/bazi/derived';
 import { getDayLog } from '../src/state/logs';
@@ -12,8 +12,8 @@ import { areaPath, series, smoothPath } from '../src/lib/curve';
 // This screen always uses a dark, re-tuned palette (L lowered, C kept — not a straight
 // inversion) regardless of the app's light/dark setting, per the handoff's own note for 13.
 const DARK = {
-  bg: '#232025', ink: '#F3F0F3', ink2: '#C7C0C9', ink3: '#8D8790',
-  line: 'rgba(243,240,243,0.14)', curve: '#A79BC4', chip: '#2C282E',
+  bg: dark.bg, ink: dark.ink, ink2: dark.ink2, ink3: dark.ink3,
+  line: dark.line, curve: dark.curve, chip: dark.surface,
 };
 
 function previousMonth(): { year: number; month: number } {

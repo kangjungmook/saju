@@ -109,7 +109,7 @@ export default function HomeScreen() {
 
         <View style={styles.weekRow}>
           {WEEKDAYS.map((w, i) => (
-            <Text key={w} style={[styles.weekday, { color: i === 0 ? '#B4664C' : colors.ink3 }]}>{w}</Text>
+            <Text key={w} style={[styles.weekday, { color: i === 0 ? colors.sunday : colors.ink3 }]}>{w}</Text>
           ))}
         </View>
 

@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   value: { fontSize: 15 },
-  scrim: { flex: 1, backgroundColor: 'rgba(20,18,20,0.42)', justifyContent: 'flex-end' },
+  scrim: { flex: 1, backgroundColor: 'rgba(29,36,50,0.42)', justifyContent: 'flex-end' }, // ink @ 42%
   sheet: { borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, paddingBottom: 24, paddingTop: space.base },
   option: { paddingHorizontal: space.lg, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
 });
