@@ -1,4 +1,4 @@
-import { Chart, DayScore, Element, GanZhi, TenGodName } from '../../types/domain';
+import { Chart, DayScore, Element, GanZhi, TenGodName, Zhi } from '../../types/domain';
 import { GAN_ELEMENT, HANGAN, HANZHI, ZHI_ELEMENT, ganIndexOf, monthPillar, relateElements, yearPillar, zhiIndexOf } from './ganzhi';
 import { kstToAbsoluteJDE } from './time';
 import { computeDayScore } from './dayScore';
@@ -71,19 +71,25 @@ export function computeFacets(chart: Chart, day: DayScore): { name: Facet; value
 const NUMBER_BY_ELEMENT: Record<Element, [number, number]> = {
   木: [3, 8], 火: [2, 7], 土: [5, 10], 金: [4, 9], 水: [1, 6],
 };
-const COLOR_BY_ELEMENT: Record<Element, { name: string; oklch: string }> = {
-  木: { name: '청록', oklch: 'oklch(0.62 0.10 165)' },
-  火: { name: '다홍', oklch: 'oklch(0.64 0.14 32)' },
-  土: { name: '담황', oklch: 'oklch(0.82 0.08 85)' },
-  金: { name: '백자', oklch: 'oklch(0.93 0.012 265)' },
-  水: { name: '먹빛', oklch: 'oklch(0.40 0.03 260)' },
+// `hanja` is the 오방색 character, which is what 03's chip shows next to the name.
+// `hex` is the swatch fill: these were oklch() strings, which only ever resolved
+// because the app had so far only been run on web — React Native's own color
+// parser has no oklch(), so the 04 상세 swatch was broken on iOS/Android.
+const COLOR_BY_ELEMENT: Record<Element, { name: string; hanja: string; hex: string }> = {
+  木: { name: '청록', hanja: '靑', hex: '#419977' }, // oklch(0.62 0.10 165)
+  火: { name: '다홍', hanja: '赤', hex: '#D36854' }, // oklch(0.64 0.14 32)
+  土: { name: '담황', hanja: '黃', hex: '#DCC188' }, // oklch(0.82 0.08 85)
+  金: { name: '백자', hanja: '白', hex: '#E4E8F0' }, // oklch(0.93 0.012 265)
+  水: { name: '먹빛', hanja: '黑', hex: '#3E4858' }, // oklch(0.40 0.03 260)
 };
-const DIRECTION_BY_ELEMENT: Record<Element, { name: string; deg: number }> = {
-  木: { name: '동', deg: 90 },
-  火: { name: '남', deg: 180 },
-  金: { name: '서', deg: 270 },
-  水: { name: '북', deg: 0 },
-  土: { name: '중앙', deg: 45 },
+// `label` is spelled out rather than built as `${name}쪽`, which would produce
+// "중앙쪽" for 土.
+const DIRECTION_BY_ELEMENT: Record<Element, { name: string; hanja: string; label: string; deg: number }> = {
+  木: { name: '동', hanja: '東', label: '동쪽', deg: 90 },
+  火: { name: '남', hanja: '南', label: '남쪽', deg: 180 },
+  金: { name: '서', hanja: '西', label: '서쪽', deg: 270 },
+  水: { name: '북', hanja: '北', label: '북쪽', deg: 0 },
+  土: { name: '중앙', hanja: '中', label: '중앙', deg: 45 },
 };
 const FOOD_BY_ELEMENT: Record<Element, { name: string; emoji: string }> = {
   木: { name: '푸른 채소', emoji: '🥬' },
@@ -95,8 +101,8 @@ const FOOD_BY_ELEMENT: Record<Element, { name: string; emoji: string }> = {
 
 export interface LuckyItems {
   number: number;
-  color: { name: string; oklch: string };
-  direction: { name: string; deg: number };
+  color: { name: string; hanja: string; hex: string };
+  direction: { name: string; hanja: string; label: string; deg: number };
   food: { name: string; emoji: string };
 }
 
@@ -262,4 +268,32 @@ export function monthlyHeadline(chart: Chart, year: number, month: number): { ti
   const rel = relateElements(pillar.element, dmEl);
   const info = HEADLINE_BY_RELATION[rel];
   return { title: info.title, body: info.body(`${pillar.element}(${ELEMENT_INFO[pillar.element].reading})`) };
+}
+
+/**
+ * Clock span each 시진 covers, as 03's chips and 15's rows both label it.
+ * Branch i spans [2i-1, 2i+1) hours, so 子 wraps midnight at 23–01.
+ * Kept here rather than inline in a screen so 15 시간대별 흐름 reads the same
+ * spans 03 shows — the handoff warns (note for 26) that a second copy of a
+ * shared formula is how two screens start disagreeing.
+ */
+export function hourRange(zhi: Zhi): { startHour: number; endHour: number } {
+  const i = zhiIndexOf(zhi);
+  return { startHour: (i * 2 + 23) % 24, endHour: (i * 2 + 1) % 24 };
+}
+
+function clockLabel(hour: number): string {
+  const isPM = hour >= 12;
+  const h12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${isPM ? '오후' : '오전'} ${h12}시`;
+}
+
+/** "오후 3–5시" — collapses the meridiem when both ends share it, as the design does. */
+export function hourRangeLabel(zhi: Zhi): string {
+  const { startHour, endHour } = hourRange(zhi);
+  const startPM = startHour >= 12;
+  const endPM = endHour >= 12;
+  const end12 = endHour % 12 === 0 ? 12 : endHour % 12;
+  if (startPM === endPM) return `${clockLabel(startHour).replace('시', '')}–${end12}시`;
+  return `${clockLabel(startHour)}–${clockLabel(endHour)}`;
 }

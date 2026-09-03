@@ -9,6 +9,7 @@ import { Button } from '../src/components/Button';
 import { useChart } from '../src/state/ChartContext';
 import { getDayScore } from '../src/state/scores';
 import { getLoggedDates } from '../src/state/logs';
+import { markNotificationsOpened } from '../src/state/notifications';
 import { DayScore } from '../src/types/domain';
 import { todayISO, trailingDates } from '../src/lib/date';
 
@@ -30,6 +31,8 @@ export default function NotificationsScreen() {
 
   useEffect(() => {
     Notifications.getPermissionsAsync().then((r) => setPerm(r.status as PermState));
+    // Opening the 알림함 is what clears 03's unread dot.
+    markNotificationsOpened(todayISO());
   }, []);
 
   useEffect(() => {

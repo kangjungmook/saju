@@ -198,7 +198,7 @@ export default function DetailScreen() {
                 <Text style={{ fontSize: 11.5, color: colors.ink3 }}>숫자</Text>
               </View>
               <View style={styles.luckyCol}>
-                <View style={[styles.luckySwatch, { backgroundColor: lucky.color.oklch }]} />
+                <View style={[styles.luckySwatch, { backgroundColor: lucky.color.hex }]} />
                 <Text style={{ fontSize: 11.5, color: colors.ink3 }}>{lucky.color.name}</Text>
               </View>
               <View style={styles.luckyCol}>

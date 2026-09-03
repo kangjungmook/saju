@@ -11,6 +11,18 @@ export function computeCounterpartChart(relationId: string, birth: BirthInput): 
   return computeChart('counterpart', relationId, birth);
 }
 
+/**
+ * How good one date is for the two of them together. 11 궁합 uses it for its
+ * 잘 맞는 날 list and 03 홈 for the "…님과 맞는 날" row; they read different
+ * date windows but must not read different formulas (handoff, note for 26:
+ * a second copy of a shared formula is how two screens start disagreeing).
+ */
+export function sharedDayScore(me: Chart, other: Chart, date: string): number {
+  const a = computeDayScore(me, date).raw;
+  const b = computeDayScore(other, date).raw;
+  return Math.round((a + b) / 2);
+}
+
 export interface CompatibilityResult {
   total: number;
   breakdown: { label: string; value: number }[];
@@ -63,11 +75,7 @@ export function computeCompatibility(me: Chart, other: Chart): CompatibilityResu
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
   const goodDays = candidates
-    .map((date) => {
-      const a = computeDayScore(me, date).raw;
-      const b = computeDayScore(other, date).raw;
-      return { date, score: Math.round((a + b) / 2) };
-    })
+    .map((date) => ({ date, score: sharedDayScore(me, other, date) }))
     .sort((x, y) => y.score - x.score)
     .slice(0, 3)
     .sort((x, y) => (x.date < y.date ? -1 : 1));

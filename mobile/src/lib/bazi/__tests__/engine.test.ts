@@ -1,5 +1,6 @@
 import { jdeToCivil, toJDN } from '../julian';
-import { dayPillarFromJDN } from '../ganzhi';
+import { dayPillarFromJDN, hourBranchIndex, ZHI } from '../ganzhi';
+import { hourRange, hourRangeLabel } from '../derived';
 import { solarTermJDE } from '../solar';
 import { computeChart } from '../index';
 import { computeDayScore } from '../dayScore';
@@ -117,5 +118,31 @@ describe('jdeToCivil / toJDN round trip', () => {
       const civil = jdeToCivil(jdn);
       expect([civil.year, civil.month, civil.day]).toEqual([y, m, d]);
     }
+  });
+});
+
+describe('시진 spans (shared by 03 chips and 15 시간대별 흐름)', () => {
+  it('anchors each branch to its traditional two-hour span, with 子 wrapping midnight', () => {
+    expect(hourRange('자')).toEqual({ startHour: 23, endHour: 1 });
+    expect(hourRange('축')).toEqual({ startHour: 1, endHour: 3 });
+    expect(hourRange('오')).toEqual({ startHour: 11, endHour: 13 });
+    expect(hourRange('신')).toEqual({ startHour: 15, endHour: 17 });
+    expect(hourRange('해')).toEqual({ startHour: 21, endHour: 23 });
+  });
+
+  it('agrees with hourBranchIndex, which is what the chart engine itself uses', () => {
+    for (const zhi of ZHI) {
+      const { startHour } = hourRange(zhi);
+      expect(ZHI[hourBranchIndex(startHour, 0)]).toBe(zhi);
+      // and still inside the same branch an hour later
+      expect(ZHI[hourBranchIndex((startHour + 1) % 24, 30)]).toBe(zhi);
+    }
+  });
+
+  it('labels a span the way 03 renders it, collapsing a shared meridiem', () => {
+    expect(hourRangeLabel('신')).toBe('오후 3–5시');
+    expect(hourRangeLabel('사')).toBe('오전 9–11시');
+    expect(hourRangeLabel('오')).toBe('오전 11시–오후 1시'); // crosses noon
+    expect(hourRangeLabel('자')).toBe('오후 11시–오전 1시'); // crosses midnight
   });
 });
