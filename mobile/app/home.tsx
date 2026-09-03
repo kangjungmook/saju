@@ -14,6 +14,7 @@ import { Chart, DayScore, Relation } from '../src/types/domain';
 import { HANGAN, HANZHI, GAN_ELEMENT, ganIndexOf, zhiIndexOf } from '../src/lib/bazi/ganzhi';
 import { computeLuckyItems, currentAge, hourRangeLabel, monthlyHeadline, calendarMonthPillar, yearGanZhiHanja } from '../src/lib/bazi/derived';
 import { computeCounterpartChart, sharedDayScore } from '../src/lib/bazi/compatibility';
+import { TabBar, useTabBarScroll } from '../src/components/TabBar';
 import { isoOf, todayISO } from '../src/lib/date';
 
 const TITLES = ['숨을 고르는 날', '천천히 가도 되는 날', '잔잔하게 흐르는 날', '흐름이 트이는 날', '크게 열리는 날'];
@@ -62,6 +63,7 @@ export default function HomeScreen() {
   const [streak, setStreak] = useState(0);
   const [loggedYesterday, setLoggedYesterday] = useState(true);
   const [partner, setPartner] = useState<{ relation: Relation; chart: Chart } | null>(null);
+  const tabScroll = useTabBarScroll();
 
   useEffect(() => {
     if (!chartLoading && !chart) router.replace('/onboarding');
@@ -256,7 +258,12 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        onScroll={tabScroll.onScroll}
+        scrollEventThrottle={tabScroll.scrollEventThrottle}
+      >
         {todayScore && (
           <View style={styles.summary}>
             <Text style={{ fontSize: 12, letterSpacing: 0.5, color: colors.ink3, marginBottom: space.sm }}>
@@ -415,7 +422,7 @@ export default function HomeScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      <TabBar onNotReady={notReady} colors={colors} chart={chart} />
+      <TabBar chart={chart} collapsed={tabScroll.collapsed} onNotReady={notReady} />
     </SafeAreaView>
   );
 }
@@ -425,39 +432,6 @@ function Chip({ colors, glyph, label }: { colors: any; glyph: string; label: str
     <View style={[styles.chip, { backgroundColor: colors.surface2 }]}>
       <Text style={{ fontFamily: fonts.serif, fontSize: 12, color: colors.ink2 }}>{glyph}</Text>
       <Text style={{ fontSize: 11.5, color: colors.ink2 }}>{label}</Text>
-    </View>
-  );
-}
-
-function TabBar({ onNotReady, colors, chart }: { onNotReady: (n: string) => void; colors: any; chart: any }) {
-  const dayMasterHan = HANGAN[ganIndexOf(chart.dayMaster)];
-  return (
-    <View style={[styles.tabBar, { backgroundColor: colors.surface + 'CC' }]}>
-      <Pressable accessibilityLabel="캘린더" style={[styles.tabActive, { backgroundColor: colors.ink }]}>
-        <Svg viewBox="0 0 24 24" width={21} height={21}>
-          <Path
-            d="M4 7.5a2 2 0 012-2h12a2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2zM4 10.5h16M8 4v3M16 4v3"
-            fill="none"
-            stroke={colors.surface}
-            strokeWidth={1.7}
-            strokeLinecap="round"
-          />
-        </Svg>
-      </Pressable>
-      <Pressable accessibilityLabel="문답" style={styles.tabBtn} onPress={() => onNotReady('문답')}>
-        <Text style={{ fontSize: 18, color: colors.ink3 }}>?</Text>
-      </Pressable>
-      <Pressable accessibilityLabel="하루 기록" style={styles.tabBtn} onPress={() => router.push('/daylog')}>
-        <Text style={{ fontSize: 18, color: colors.ink3 }}>✎</Text>
-      </Pressable>
-      <Pressable accessibilityLabel="궁합" style={styles.tabBtn} onPress={() => router.push('/relations')}>
-        <Text style={{ fontSize: 18, color: colors.ink3 }}>◎</Text>
-      </Pressable>
-      <Pressable accessibilityLabel="내 사주" style={styles.tabBtn} onPress={() => router.push('/mysaju')}>
-        <View style={[styles.tabAvatar, { backgroundColor: colors.score[1] }]}>
-          <Text style={{ fontFamily: fonts.serif, fontSize: 13, fontWeight: '600', color: colors.scoreFg[1] }}>{dayMasterHan}</Text>
-        </View>
-      </Pressable>
     </View>
   );
 }
@@ -497,11 +471,4 @@ const styles = StyleSheet.create({
   nudge: { marginTop: 26, padding: 18, borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: 14 },
   nudgeBadge: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   nudgeCta: { minHeight: 38, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 11 },
-  tabBar: {
-    position: 'absolute', left: 20, right: 20, bottom: 26, height: 66, borderRadius: 33,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12,
-  },
-  tabBtn: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
-  tabActive: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
-  tabAvatar: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
 });
