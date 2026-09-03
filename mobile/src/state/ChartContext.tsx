@@ -46,10 +46,11 @@ export function ChartProvider({ children }: { children: React.ReactNode }) {
       const id = `${userId}-${Date.now()}`;
       const next = computeChart(userId, id, input);
       setChart(next);
-      await setJSON(CHART_KEY, next);
+      const localSave = setJSON(CHART_KEY, next);
       if (token) {
         saveChartRemote(token, next).catch((e) => console.warn('[chart] backend sync failed, kept locally:', e));
       }
+      await localSave;
       return next;
     },
     [token],

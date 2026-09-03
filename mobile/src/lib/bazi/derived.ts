@@ -1,6 +1,7 @@
 import { Chart, DayScore, Element, GanZhi, TenGodName } from '../../types/domain';
-import { GAN_ELEMENT, ZHI_ELEMENT, ganIndexOf, relateElements, yearPillar, zhiIndexOf } from './ganzhi';
+import { GAN_ELEMENT, HANGAN, HANZHI, ZHI_ELEMENT, ganIndexOf, monthPillar, relateElements, yearPillar, zhiIndexOf } from './ganzhi';
 import { kstToAbsoluteJDE } from './time';
+import { computeDayScore } from './dayScore';
 
 const RELATION_WEIGHT: Record<ReturnType<typeof relateElements>, number> = {
   producedBy: 13,
@@ -122,4 +123,143 @@ const REMEDY: [string, string][] = [
 export function remedyForBand(band: 1 | 2 | 3 | 4 | 5): { caution: string; ritual: string } {
   const [caution, ritual] = REMEDY[band - 1];
   return { caution, ritual };
+}
+
+// --- Screen 05 (내 사주 · 원국 풀이) ------------------------------------
+
+export const ELEMENT_INFO: Record<Element, { reading: string; noun: string; nounParticle: string; readingParticle: '이' | '가' }> = {
+  木: { reading: '목', noun: '나무', nounParticle: '를', readingParticle: '이' },
+  火: { reading: '화', noun: '불', nounParticle: '을', readingParticle: '가' },
+  土: { reading: '토', noun: '흙', nounParticle: '을', readingParticle: '가' },
+  金: { reading: '금', noun: '쇠', nounParticle: '를', readingParticle: '이' },
+  水: { reading: '수', noun: '물', nounParticle: '을', readingParticle: '가' },
+};
+
+/** "나무를 닮은 사주 / 갑목(甲木) 일간" — built from the real day master, not a fixture. */
+export function dayMasterHeadline(chart: Chart): { line1: string; line2: string } {
+  const dmIdx = ganIndexOf(chart.dayMaster);
+  const el = GAN_ELEMENT[dmIdx];
+  const info = ELEMENT_INFO[el];
+  return {
+    line1: `${info.noun}${info.nounParticle} 닮은 사주`,
+    line2: `${chart.dayMaster}${info.reading}(${HANGAN[dmIdx]}${el}) 일간`,
+  };
+}
+
+/** One line naming the chart's most- and least-represented elements. */
+export function elementDistributionSummary(elements: Record<Element, number>): string {
+  const entries = Object.entries(elements) as [Element, number][];
+  const [highEl] = entries.reduce((a, b) => (b[1] > a[1] ? b : a));
+  const [lowEl] = entries.reduce((a, b) => (b[1] < a[1] ? b : a));
+  const high = ELEMENT_INFO[highEl];
+  const low = ELEMENT_INFO[lowEl];
+  return `${high.reading}(${highEl})${high.readingParticle} 도드라지고 ${low.reading}(${lowEl})${low.readingParticle} 옅은 구성이에요.`;
+}
+
+const STRENGTH_LABELS = ['신약', '약간 신약', '중화', '약간 신강', '신강'] as const;
+
+/**
+ * 일간 강약 — how supported vs. drained the day master is by the chart's other
+ * seven characters. Each of the other stems/branches either reinforces (같은
+ * 오행 or 일간을 생하는 오행) or drains (일간이 생/극하거나, 일간을 극하는 오행);
+ * the balance maps to 0–100 with 50 = 중화.
+ */
+export function dayMasterStrength(chart: Chart): { percent: number; label: (typeof STRENGTH_LABELS)[number] } {
+  const dmEl = GAN_ELEMENT[ganIndexOf(chart.dayMaster)];
+  const others: GanZhi[] = [chart.pillars.year, chart.pillars.month, chart.pillars.hour].filter(
+    (p): p is GanZhi => p !== null,
+  );
+  const branchElements = [chart.pillars.year, chart.pillars.month, chart.pillars.day, chart.pillars.hour]
+    .filter((p): p is GanZhi => p !== null)
+    .map((p) => ZHI_ELEMENT[zhiIndexOf(p.zhi)]);
+
+  let score = 0;
+  let count = 0;
+  const tally = (el: Element) => {
+    const rel = relateElements(el, dmEl);
+    score += rel === 'same' || rel === 'producedBy' ? 1 : -1;
+    count += 1;
+  };
+  others.forEach((p) => tally(p.element));
+  branchElements.forEach(tally);
+
+  const percent = Math.round(50 + (score / Math.max(1, count)) * 50);
+  const clamped = Math.max(2, Math.min(98, percent));
+  const idx = clamped < 30 ? 0 : clamped < 45 ? 1 : clamped <= 55 ? 2 : clamped <= 70 ? 3 : 4;
+  return { percent: clamped, label: STRENGTH_LABELS[idx] };
+}
+
+const CALENDAR_LABEL = { solar: '양력', lunar: '음력' } as const;
+
+/** "1997년 3월 21일 묘시생 · 양력" */
+export function birthCaption(chart: Chart): string {
+  const [y, m, d] = chart.birth.date.split('-').map(Number);
+  const hourPart = chart.hasHour && chart.pillars.hour ? `${chart.pillars.hour.zhi}시생 · ` : '시간 미상 · ';
+  return `${y}년 ${m}월 ${d}일 ${hourPart}${CALENDAR_LABEL[chart.birth.calendar]}`;
+}
+
+/**
+ * 23 연간 뷰's month tiles. Scored from the calendar month's actual 절기-based
+ * 월주 (month pillar) relative to the day master — the same mechanism 세운/대운
+ * use — rather than averaging each day's score: a day-score average over any
+ * ~30-day window washes out almost all variation, since the day-stem (10-day)
+ * and day-branch (12-day) cycles both spread evenly across a month regardless
+ * of which month it is. The month pillar is what actually differs month to
+ * month, so scoring it directly is what shows a real "이 달이 낫다" signal.
+ */
+export function calendarMonthPillar(year: number, month: number): GanZhi {
+  const sample = { year, month, day: 15, hour: 12, minute: 0 }; // mid-month, away from 절기 boundaries
+  const jde = kstToAbsoluteJDE(sample);
+  const { pillar: yearP, solarYear } = yearPillar(sample, jde);
+  return monthPillar(jde, solarYear, ganIndexOf(yearP.gan));
+}
+
+export function monthScore(chart: Chart, year: number, month: number): number {
+  const pillar = calendarMonthPillar(year, month);
+  return scoreForPillar(chart, pillar, `${chart.id}:month:${year}-${month}`);
+}
+
+export function currentAge(birthISO: string): number {
+  const [by] = birthISO.split('-').map(Number);
+  return new Date().getFullYear() - by + 1; // 세는나이, matches the luck-cycle age convention
+}
+
+/** The 입춘-anchored year pillar for `year`, e.g. "丙午" — used by 23 연간 뷰's header. */
+export function yearGanZhiHanja(year: number): string {
+  const sample = { year, month: 7, day: 1, hour: 0, minute: 0 };
+  const { pillar } = yearPillar(sample, kstToAbsoluteJDE(sample));
+  return `${HANGAN[ganIndexOf(pillar.gan)]}${HANZHI[zhiIndexOf(pillar.zhi)]}`;
+}
+
+// --- Screen 13 (월간 결산) -----------------------------------------------
+
+export function dailyScoresForMonth(chart: Chart, year: number, month: number): { date: string; score: number }[] {
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return Array.from({ length: daysInMonth }, (_, i) => {
+    const date = `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
+    return { date, score: computeDayScore(chart, date).raw };
+  });
+}
+
+const ELEMENT_MOOD: Record<Element, string> = { 木: '확장', 火: '표현', 土: '다짐', 金: '정리', 水: '흐름' };
+
+export function monthlyElementMood(year: number, month: number): { element: Element; mood: string } {
+  const pillar = calendarMonthPillar(year, month);
+  return { element: pillar.element, mood: ELEMENT_MOOD[pillar.element] };
+}
+
+const HEADLINE_BY_RELATION: Record<ReturnType<typeof relateElements>, { title: string; body: (el: string) => string }> = {
+  producedBy: { title: '채워지는 결로 지났습니다', body: (el) => `${el}이 든든하게 받쳐준 달이라, 무리하지 않아도 힘이 남았어요.` },
+  same: { title: '나답게 밀어붙인 달이었습니다', body: (el) => `${el} 기운이 겹쳐 힘이 넘쳤던 만큼, 잠시 멈추는 연습도 필요했을 거예요.` },
+  produces: { title: '꺼내 쓰는 결로 지났습니다', body: (el) => `${el} 방향으로 에너지를 많이 썼던 달이라, 회복하는 시간이 곁들여지면 좋아요.` },
+  controls: { title: '기회를 다루며 지났습니다', body: (el) => `${el} 쪽 기회가 계속 보였던 달이에요. 손에 쥔 걸 정리해볼 타이밍입니다.` },
+  controlledBy: { title: '버티는 힘을 길렀습니다', body: (el) => `${el}의 압박이 있었던 달이라 속도를 늦출 수밖에 없었어요. 잘 견딘 시기입니다.` },
+};
+
+export function monthlyHeadline(chart: Chart, year: number, month: number): { title: string; body: string } {
+  const pillar = calendarMonthPillar(year, month);
+  const dmEl = GAN_ELEMENT[ganIndexOf(chart.dayMaster)];
+  const rel = relateElements(pillar.element, dmEl);
+  const info = HEADLINE_BY_RELATION[rel];
+  return { title: info.title, body: info.body(`${pillar.element}(${ELEMENT_INFO[pillar.element].reading})`) };
 }

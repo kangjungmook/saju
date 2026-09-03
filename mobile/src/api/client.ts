@@ -1,7 +1,12 @@
 import Constants from 'expo-constants';
 import { Chart } from '../types/domain';
 
-const API_BASE_URL: string = Constants.expoConfig?.extra?.apiBaseUrl ?? 'http://localhost:8080';
+// EXPO_PUBLIC_* vars are inlined at build time (Metro replaces process.env.EXPO_PUBLIC_*
+// with a literal), so a hosted web build (Vercel etc.) can point at its real backend by
+// setting EXPO_PUBLIC_API_BASE_URL — no app.json edit or rebuild-from-source needed. Falls
+// back to app.json's extra.apiBaseUrl, then localhost, for local dev.
+const API_BASE_URL: string =
+  process.env.EXPO_PUBLIC_API_BASE_URL ?? Constants.expoConfig?.extra?.apiBaseUrl ?? 'http://localhost:8080';
 
 export interface AuthResponse {
   token: string;
@@ -52,4 +57,42 @@ export function saveChartRemote(token: string, chart: Chart) {
 
 export function fetchChartRemote(token: string) {
   return request<Chart>('/charts/me', { headers: authHeader(token) });
+}
+
+// --- Family group ---------------------------------------------------------
+export interface FamilyInvite {
+  code: string;
+  expiresAt: string;
+}
+
+export interface FamilyInvitePreview {
+  ownerName: string;
+  memberCount: number;
+}
+
+export interface FamilyMember {
+  userId: string;
+  nickname: string;
+  isMe: boolean;
+  chart: Chart | null;
+}
+
+export function createFamilyInvite(token: string) {
+  return request<FamilyInvite>('/family/invites', { method: 'POST', headers: authHeader(token) });
+}
+
+export function previewFamilyInvite(token: string, code: string) {
+  return request<FamilyInvitePreview>(`/family/invites/${code}`, { headers: authHeader(token) });
+}
+
+export function joinFamilyGroup(token: string, code: string) {
+  return request<FamilyMember[]>('/family/join', {
+    method: 'POST',
+    headers: authHeader(token),
+    body: JSON.stringify({ code }),
+  });
+}
+
+export function getFamilyMembers(token: string) {
+  return request<FamilyMember[]>('/family/members', { headers: authHeader(token) });
 }
